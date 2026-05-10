@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Primoris Services (PRIM) — First-Principles Research Dashboard</title>
+<meta name="description" content="Hedge-fund-quality interactive research dashboard for Primoris Services Corp (NYSE:PRIM). Built from primary source broker reports (UBS, Goldman, Jefferies) and AlphaSense primers — May 2026." />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#080b14;
+  --bg-2:#0e1322;
+  --surface:#131a2d;
+  --surface-2:#1a2238;
+  --surface-3:#222c47;
+  --border:#26324d;
+  --border-strong:#34416a;
+  --text:#e8edf6;
+  --text-2:#aab4cc;
+  --text-3:#6f7c99;
+  --energy:#e8703c;          /* Energy / orange */
+  --energy-soft:rgba(232,112,60,.14);
+  --util:#4d7ef9;            /* Utilities / blue */
+  --util-soft:rgba(77,126,249,.14);
+  --bull:#3acc8f;
+  --bull-soft:rgba(58,204,143,.14);
+  --bear:#ef4565;
+  --bear-soft:rgba(239,69,101,.14);
+  --warn:#f5b942;
+  --warn-soft:rgba(245,185,66,.14);
+  --teal:#27c4d9;
+  --grad-1:linear-gradient(135deg,#e8703c 0%,#f5b942 100%);
+  --grad-2:linear-gradient(135deg,#4d7ef9 0%,#27c4d9 100%);
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(232,112,60,.10),transparent 35%),
+    radial-gradient(circle at 85% 80%,rgba(77,126,249,.08),transparent 35%),
+    radial-gradient(circle at 50% 50%,rgba(58,204,143,.04),transparent 50%);
+}
+::selection{background:rgba(232,112,60,.35);color:#fff}
+a{color:var(--util);text-decoration:none}
+a:hover{color:var(--energy)}
+code,.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.92em}
+
+/* ---------- NAV ---------- */
+nav.topnav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(8,11,20,.85);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  max-width:1400px;margin:0 auto;padding:14px 28px;
+  display:flex;align-items:center;gap:24px;
+}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:18px;letter-spacing:.3px}
+.brand .ticker{
+  background:var(--grad-1);color:#fff;padding:4px 10px;border-radius:6px;
+  font-family:'JetBrains Mono';font-size:13px;
+}
+.nav-links{display:flex;gap:6px;flex:1;flex-wrap:wrap;font-size:13px}
+.nav-links a{
+  color:var(--text-2);padding:6px 11px;border-radius:7px;
+  transition:.18s ease;font-weight:500;
+}
+.nav-links a:hover{background:var(--surface);color:var(--text)}
+.nav-cta{
+  background:var(--grad-1);color:#fff;
+  padding:8px 16px;border-radius:8px;font-weight:600;font-size:13px;
+  white-space:nowrap;transition:.2s;
+}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,112,60,.45);color:#fff}
+.menu-btn{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer}
+
+/* ---------- HERO ---------- */
+.hero{
+  max-width:1400px;margin:0 auto;padding:54px 28px 24px;
+  display:grid;grid-template-columns:1.4fr 1fr;gap:44px;align-items:start;
+}
+.hero h1{font-size:48px;line-height:1.05;font-weight:800;letter-spacing:-.02em;margin-bottom:18px}
+.hero h1 .accent{
+  background:var(--grad-1);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero .subline{color:var(--text-2);font-size:18px;max-width:640px;margin-bottom:24px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.tag{
+  background:var(--surface);border:1px solid var(--border);
+  padding:5px 12px;border-radius:99px;font-size:12px;color:var(--text-2);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.tag .dot{width:6px;height:6px;border-radius:50%;background:var(--energy)}
+.tag.util .dot{background:var(--util)}
+.tag.bull .dot{background:var(--bull)}
+.tag.bear .dot{background:var(--bear)}
+
+/* KPI grid in hero */
+.kpi-row{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:8px;
+}
+.kpi{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;
+  position:relative;overflow:hidden;
+}
+.kpi .lbl{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.kpi .val{font-size:26px;font-weight:700;font-family:'JetBrains Mono';letter-spacing:-.02em}
+.kpi .sub{font-size:11px;color:var(--text-2);margin-top:3px}
+.kpi.up .val{color:var(--bull)}
+.kpi.down .val{color:var(--bear)}
+.kpi::after{
+  content:'';position:absolute;right:-22px;top:-22px;width:80px;height:80px;
+  border-radius:50%;background:radial-gradient(circle,rgba(232,112,60,.12),transparent 70%);
+}
+
+/* Right-side hero card */
+.hero-card{
+  background:linear-gradient(180deg,var(--surface) 0%,var(--bg-2) 100%);
+  border:1px solid var(--border);border-radius:16px;padding:24px;
+  box-shadow:var(--shadow);
+}
+.hero-card h3{font-size:13px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:18px}
+.q1-table{width:100%;font-size:13px}
+.q1-table tr{border-bottom:1px solid var(--border)}
+.q1-table tr:last-child{border-bottom:none}
+.q1-table td{padding:10px 4px}
+.q1-table td:first-child{color:var(--text-2)}
+.q1-table td:nth-child(2),.q1-table td:nth-child(3){font-family:'JetBrains Mono';text-align:right}
+.q1-table .miss{color:var(--bear);font-weight:600}
+.q1-table .beat{color:var(--bull);font-weight:600}
+
+/* ---------- SECTIONS ---------- */
+section{
+  max-width:1400px;margin:0 auto;padding:64px 28px;
+  scroll-margin-top:80px;
+}
+.section-head{margin-bottom:36px;max-width:880px}
+.section-head .eyebrow{
+  font-size:12px;font-weight:600;color:var(--energy);
+  text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.section-head .eyebrow::before{content:'';width:24px;height:2px;background:var(--energy)}
+.section-head h2{font-size:36px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px;line-height:1.15}
+.section-head .lede{color:var(--text-2);font-size:16px;line-height:1.65}
+
+/* Cards */
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;
+}
+.card h4{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.card .icon-dot{
+  width:10px;height:10px;border-radius:50%;background:var(--energy);flex-shrink:0;
+}
+.icon-dot.util{background:var(--util)}.icon-dot.bull{background:var(--bull)}.icon-dot.bear{background:var(--bear)}.icon-dot.warn{background:var(--warn)}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+
+/* Stats row */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px}
+.stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;
+  position:relative;overflow:hidden;
+}
+.stat .lbl{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.stat .val{font-size:28px;font-weight:700;font-family:'JetBrains Mono';letter-spacing:-.02em}
+.stat .sub{font-size:11px;color:var(--text-2);margin-top:4px}
+.stat.energy .val{color:var(--energy)}
+.stat.util .val{color:var(--util)}
+.stat.bull .val{color:var(--bull)}
+.stat.bear .val{color:var(--bear)}
+
+/* Chart container */
+.chart-box{position:relative;height:340px;width:100%;margin-top:8px}
+.chart-box.tall{height:420px}
+.chart-box.short{height:260px}
+.chart-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.chart-meta h4{margin:0}
+.legend-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{
+  padding:4px 10px;border-radius:99px;font-size:11px;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);
+  cursor:pointer;transition:.15s;
+}
+.pill:hover{border-color:var(--border-strong);color:var(--text)}
+.pill.active{background:var(--energy);color:#fff;border-color:var(--energy)}
+
+/* Anatomy */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:24px}
+.anatomy-list{display:flex;flex-direction:column;gap:10px}
+.anatomy-item{
+  background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--bear);
+  padding:14px 18px;border-radius:8px;
+}
+.anatomy-item .num{
+  font-family:'JetBrains Mono';color:var(--bear);font-weight:700;font-size:13px;margin-bottom:4px;
+}
+.anatomy-item h5{font-size:14px;font-weight:600;margin-bottom:4px}
+.anatomy-item p{font-size:13px;color:var(--text-2);line-height:1.5}
+
+/* Bull/Bear */
+.debate-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.debate-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:24px;position:relative;
+}
+.debate-card.bull{border-top:3px solid var(--bull)}
+.debate-card.bear{border-top:3px solid var(--bear)}
+.debate-card h3{
+  font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.debate-card.bull h3{color:var(--bull)}
+.debate-card.bear h3{color:var(--bear)}
+.debate-list{list-style:none}
+.debate-list li{
+  padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;line-height:1.55;
+}
+.debate-list li:last-child{border-bottom:none}
+.debate-list li strong{color:var(--text);display:block;margin-bottom:2px}
+.debate-list li span{color:var(--text-2)}
+
+/* Map */
+.map-wrap{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;
+  position:relative;
+}
+.us-map{width:100%;max-width:920px;margin:0 auto;display:block}
+.us-map .state{
+  fill:var(--surface-2);stroke:var(--border-strong);stroke-width:.7;
+  transition:.15s;cursor:pointer;
+}
+.us-map .state:hover{fill:var(--surface-3);stroke:var(--text-2)}
+.us-map .state.active-energy{fill:rgba(232,112,60,.45);stroke:var(--energy)}
+.us-map .state.active-util{fill:rgba(77,126,249,.45);stroke:var(--util)}
+.us-map .state.active-both{fill:rgba(180,140,90,.55);stroke:var(--warn)}
+.us-map .state.headquarters{fill:rgba(245,185,66,.55);stroke:var(--warn);stroke-width:1.4}
+.us-map .label{fill:var(--text-2);font-size:9px;font-weight:600;pointer-events:none;font-family:'JetBrains Mono'}
+.map-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid var(--border)}
+.map-legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)}
+.map-legend-item .swatch{width:14px;height:14px;border-radius:3px;border:1px solid var(--border-strong)}
+.map-tooltip{
+  position:absolute;background:var(--bg);border:1px solid var(--border-strong);
+  padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;
+  opacity:0;transition:.15s;z-index:10;max-width:260px;box-shadow:var(--shadow);
+}
+.map-tooltip h5{font-size:13px;margin-bottom:4px;color:var(--energy)}
+.map-tooltip p{color:var(--text-2);font-size:11px;line-height:1.4}
+
+/* Driver bars */
+.driver-list{display:flex;flex-direction:column;gap:12px}
+.driver-row{display:grid;grid-template-columns:160px 1fr 70px;gap:14px;align-items:center;font-size:13px}
+.driver-row .lab{color:var(--text-2)}
+.driver-row .bar{height:10px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+.driver-row .fill{height:100%;border-radius:99px}
+.driver-row .num{font-family:'JetBrains Mono';text-align:right;color:var(--text)}
+
+/* Glossary */
+.glossary{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.glossary-item{
+  background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--util);
+  padding:14px 18px;border-radius:8px;
+}
+.glossary-item dt{font-weight:700;font-size:14px;margin-bottom:4px;color:var(--text)}
+.glossary-item dt .term{color:var(--util);font-family:'JetBrains Mono';font-size:13px}
+.glossary-item dd{font-size:13px;color:var(--text-2);line-height:1.5}
+
+/* Timeline */
+.timeline{position:relative;padding-left:32px}
+.timeline::before{
+  content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;
+  background:linear-gradient(180deg,var(--energy),var(--util));
+}
+.tl-item{position:relative;margin-bottom:24px}
+.tl-item::before{
+  content:'';position:absolute;left:-29px;top:6px;width:14px;height:14px;
+  border-radius:50%;background:var(--energy);border:3px solid var(--bg);
+}
+.tl-item.future::before{background:var(--util)}
+.tl-item.past::before{background:var(--text-3)}
+.tl-item .date{font-family:'JetBrains Mono';font-size:12px;color:var(--energy);margin-bottom:4px}
+.tl-item.future .date{color:var(--util)}
+.tl-item.past .date{color:var(--text-3)}
+.tl-item h5{font-size:15px;margin-bottom:4px}
+.tl-item p{font-size:13px;color:var(--text-2);line-height:1.5}
+
+/* Tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{
+  text-align:left;padding:10px 12px;font-weight:600;font-size:11px;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--text-3);border-bottom:1px solid var(--border-strong);
+}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text-2)}
+.tbl td:first-child{color:var(--text);font-weight:500}
+.tbl tr:hover td{background:var(--surface-2)}
+.tbl .num{font-family:'JetBrains Mono';text-align:right}
+.tbl .pos{color:var(--bull)}
+.tbl .neg{color:var(--bear)}
+.tbl .highlight{background:rgba(232,112,60,.06)}
+
+/* Broker chips */
+.broker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.broker-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;
+}
+.broker-card .name{font-weight:600;font-size:14px;margin-bottom:6px}
+.broker-card .rating{
+  display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;
+  margin-bottom:8px;
+}
+.rating.buy{background:var(--bull-soft);color:var(--bull)}
+.rating.sell{background:var(--bear-soft);color:var(--bear)}
+.rating.neutral{background:var(--warn-soft);color:var(--warn)}
+.broker-card .pt{font-family:'JetBrains Mono';font-size:22px;font-weight:700;letter-spacing:-.02em}
+.broker-card .upside{font-size:12px;margin-top:2px}
+.broker-card .upside.pos{color:var(--bull)}
+.broker-card .upside.neg{color:var(--bear)}
+.broker-card .note{font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.4}
+
+/* Catalysts */
+.cat-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.cat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;
+  border-left:3px solid var(--energy);
+}
+.cat-card.future{border-left-color:var(--util)}
+.cat-card .when{font-family:'JetBrains Mono';font-size:11px;color:var(--energy);margin-bottom:4px}
+.cat-card.future .when{color:var(--util)}
+.cat-card h5{font-size:14px;margin-bottom:6px}
+.cat-card p{font-size:12px;color:var(--text-2);line-height:1.5}
+
+/* PayneCrest deal box */
+.deal-box{
+  background:linear-gradient(135deg,var(--surface),var(--bg-2));
+  border:1px solid var(--border-strong);border-radius:14px;padding:28px;
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;
+}
+.deal-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px}
+.deal-stat{background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.deal-stat .lbl{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.deal-stat .val{font-family:'JetBrains Mono';font-size:18px;font-weight:700}
+.deal-stat .val.acc{color:var(--bull)}
+
+/* Megatrend cards */
+.mega-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mega-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;
+  position:relative;overflow:hidden;transition:.2s;
+}
+.mega-card:hover{transform:translateY(-3px);border-color:var(--border-strong)}
+.mega-card .icon{
+  width:42px;height:42px;border-radius:10px;background:var(--energy-soft);
+  display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:20px;
+}
+.mega-card .icon.util{background:var(--util-soft)}
+.mega-card .icon.bull{background:var(--bull-soft)}
+.mega-card h5{font-size:16px;margin-bottom:8px}
+.mega-card p{font-size:13px;color:var(--text-2);line-height:1.55;margin-bottom:10px}
+.mega-card .stat-line{
+  font-family:'JetBrains Mono';font-size:13px;color:var(--energy);font-weight:600;
+  padding-top:10px;border-top:1px solid var(--border);
+}
+.mega-card .stat-line.util{color:var(--util)}.mega-card .stat-line.bull{color:var(--bull)}
+
+/* Risk grid */
+.risk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.risk-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;
+  border-left:3px solid var(--bear);
+}
+.risk-card .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.risk-card h5{font-size:14px;font-weight:600}
+.risk-meter{display:flex;gap:3px}
+.risk-meter span{width:6px;height:14px;background:var(--surface-3);border-radius:1px}
+.risk-meter span.on{background:var(--bear)}
+.risk-card p{font-size:13px;color:var(--text-2);line-height:1.55}
+
+/* Footer */
+footer{
+  border-top:1px solid var(--border);padding:36px 28px;margin-top:40px;
+  text-align:center;color:var(--text-3);font-size:12px;line-height:1.6;
+}
+footer a{color:var(--text-2)}
+footer .src{margin-top:14px;font-size:11px;color:var(--text-3)}
+
+/* Mobile */
+@media (max-width:1024px){
+  .hero{grid-template-columns:1fr;padding:36px 20px}
+  .hero h1{font-size:34px}
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:1fr}
+  .grid-2{grid-template-columns:1fr}
+  .anatomy-grid{grid-template-columns:1fr}
+  .debate-grid{grid-template-columns:1fr}
+  .deal-box{grid-template-columns:1fr}
+  .glossary{grid-template-columns:1fr}
+  .cat-list{grid-template-columns:1fr}
+  .risk-grid{grid-template-columns:1fr}
+  .mega-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .driver-row{grid-template-columns:120px 1fr 60px}
+  section{padding:44px 20px}
+  .section-head h2{font-size:28px}
+  .nav-links{display:none}
+  .menu-btn{display:block}
+  .nav-links.open{display:flex;position:absolute;top:100%;left:0;right:0;background:var(--bg);
+    flex-direction:column;padding:16px;border-bottom:1px solid var(--border)}
+}
+@media (max-width:560px){
+  .stats{grid-template-columns:1fr}
+  .kpi-row{grid-template-columns:1fr}
+  .deal-stats{grid-template-columns:1fr}
+}
+
+/* Counter animation */
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+.live-dot{
+  display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bear);
+  animation:pulse 1.6s infinite;margin-right:6px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-strong)}
+</style>
+</head>
+<body>
+
+<!-- ============= NAV ============= -->
+<nav class="topnav">
+  <div class="nav-inner">
+    <div class="brand">
+      <span class="ticker">PRIM</span>
+      <span>Primoris Research Dashboard</span>
+    </div>
+    <button class="menu-btn" onclick="document.getElementById('navlinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navlinks">
+      <a href="#snapshot">Snapshot</a>
+      <a href="#what">What is PRIM?</a>
+      <a href="#model">Business Model</a>
+      <a href="#epc101">EPC 101</a>
+      <a href="#footprint">Footprint</a>
+      <a href="#drivers">Drivers</a>
+      <a href="#financials">Financials</a>
+      <a href="#backlog">Backlog</a>
+      <a href="#q1">Q1 Disaster</a>
+      <a href="#mega">End Markets</a>
+      <a href="#paynecrest">PayneCrest</a>
+      <a href="#valuation">Valuation</a>
+      <a href="#debate">Bull vs Bear</a>
+      <a href="#risks">Risks</a>
+      <a href="#catalysts">Catalysts</a>
+      <a href="#glossary">Glossary</a>
+    </div>
+    <a class="nav-cta" href="#snapshot">Start Tour →</a>
+  </div>
+</nav>
+
+<!-- ============= HERO ============= -->
+<header class="hero">
+  <div>
+    <h1>The contractor that lays the wires for <span class="accent">America's energy build-out</span> — just took a 50% beating</h1>
+    <p class="subline">
+      Primoris Services (NYSE: PRIM) is a $5.7&nbsp;B-mkt-cap specialty infrastructure contractor that builds power lines, gas pipelines, solar farms, and data center electrical rooms across the US and Canada. After three years of compounding 30%+, six botched solar projects in Q1 2026 collapsed Energy-segment margins from 10.7% to 7.6% and erased $5&nbsp;B of market cap in a single day. This dashboard is everything you need to know — written from first principles.
+    </p>
+    <div class="hero-tags">
+      <span class="tag"><span class="dot"></span>Specialty contractor</span>
+      <span class="tag util"><span class="dot"></span>Utilities + Energy</span>
+      <span class="tag bull"><span class="dot"></span>$11.9B backlog</span>
+      <span class="tag bear"><span class="dot"></span>Energy margin reset</span>
+      <span class="tag"><span class="dot"></span>$6B gas-gen pipeline</span>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi down">
+        <div class="lbl">Stock Price (May 7, '26)</div>
+        <div class="val" data-counter="107.98" data-decimals="2" data-prefix="$">$0.00</div>
+        <div class="sub">▼ 50% intraday on May 5; ▼ 27.5% MTD</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Market Cap</div>
+        <div class="val" data-counter="5.7" data-decimals="1" data-prefix="$" data-suffix="B">$0B</div>
+        <div class="sub">54.8M diluted shares</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">2025 Revenue</div>
+        <div class="val" data-counter="7.57" data-decimals="2" data-prefix="$" data-suffix="B">$0B</div>
+        <div class="sub">+19.0% YoY (record year)</div>
+      </div>
+      <div class="kpi down">
+        <div class="lbl">'26 EBITDA Guide</div>
+        <div class="val" data-counter="490" data-prefix="$" data-suffix="M">$0M</div>
+        <div class="sub">Cut from $570M (▼14% midpt)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-card">
+    <h3><span class="live-dot"></span>Q1 2026 Print — May 5</h3>
+    <table class="q1-table">
+      <tr><td>Revenue</td><td>$1.56B</td><td class="miss">▼ 10% vs cons</td></tr>
+      <tr><td>Adj. EBITDA</td><td>$60.5M</td><td class="miss">▼ 36% vs cons</td></tr>
+      <tr><td>Adj. EPS</td><td>$0.59</td><td class="miss">▼ 31% vs cons</td></tr>
+      <tr><td>Energy Rev YoY</td><td>−13.8%</td><td class="miss">vs +6.0% est</td></tr>
+      <tr><td>Energy GM%</td><td>7.6%</td><td class="miss">vs 10.7% PY</td></tr>
+      <tr><td>Utilities Rev YoY</td><td>+12.3%</td><td class="beat">+519 bps beat</td></tr>
+      <tr><td>Utilities GM%</td><td>9.8%</td><td class="beat">+60 bps YoY</td></tr>
+      <tr><td>Total backlog</td><td>$11.6B</td><td class="miss">▼ 2.5% QoQ</td></tr>
+      <tr><td>Energy backlog</td><td>$4.3B</td><td class="miss">▼ 14% QoQ</td></tr>
+      <tr><td>2026 EBITDA Guide</td><td>$480-500M</td><td class="miss">From $560-580M</td></tr>
+      <tr><td>Energy Margin Tgt</td><td>9-11%</td><td class="miss">From 10-12% (perm.)</td></tr>
+    </table>
+  </div>
+</header>
+
+<!-- ============= SNAPSHOT ============= -->
+<section id="snapshot">
+  <div class="section-head">
+    <div class="eyebrow">The setup</div>
+    <h2>The 50% drop in one chart</h2>
+    <p class="lede">
+      PRIM had compounded from $30 to $200 over three years on the back of a record solar build-out and a $11.9B backlog. Then six fixed-price solar projects went sideways at once. The "Energy" segment margin range — the steady 10–12% band the entire bull case rested on — was permanently lowered to 9–11%. Wall Street called the print "catastrophic." Three brokers, three verdicts.
+    </p>
+  </div>
+
+  <div class="stats">
+    <div class="stat bull"><div class="lbl">Top-line CAGR (2018-25)</div><div class="val">+15%</div><div class="sub">$2.94B → $7.57B revenue</div></div>
+    <div class="stat energy"><div class="lbl">Energy mix of revenue</div><div class="val">66%</div><div class="sub">Renewables, gas-gen, pipeline, civil</div></div>
+    <div class="stat util"><div class="lbl">Utilities mix of revenue</div><div class="val">34%</div><div class="sub">Gas dist, electric T&D, telecom, MSAs</div></div>
+    <div class="stat bear"><div class="lbl">Single-day stock drop</div><div class="val">−50%</div><div class="sub">May 5, 2026 — $5B mkt cap erased</div></div>
+  </div>
+
+  <div class="card">
+    <div class="chart-meta">
+      <h4><span class="icon-dot"></span>Stock price vs. analyst price targets — the post-print scatter</h4>
+      <span style="font-size:12px;color:var(--text-3)">Source: UBS, GS, Jefferies, Mizuho, KeyBanc, Roth, Guggenheim, Needham (Apr–May 2026)</span>
+    </div>
+    <div class="chart-box"><canvas id="chartBrokerPT"></canvas></div>
+  </div>
+</section>
+
+<!-- ============= WHAT IS PRIM ============= -->
+<section id="what">
+  <div class="section-head">
+    <div class="eyebrow">First principles</div>
+    <h2>What does Primoris actually do?</h2>
+    <p class="lede">
+      Forget the ticker. Imagine you're the head of <strong>ERCOT</strong> (Texas's grid) and you need a new high-voltage transmission line built across 80 miles of West Texas. Or you're <strong>Hecate Energy</strong> and you need someone to engineer, procure, and construct a 500 MW solar farm. You don't have those skills in-house. You hire a specialty contractor. <strong>That's Primoris.</strong>
+    </p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <h4><span class="icon-dot"></span>Founded</h4>
+      <p style="font-size:14px;color:var(--text-2);line-height:1.6">Founded as <strong>ARB, Inc.</strong> in Bakersfield, CA in <strong>1960</strong>. Reorganized as Primoris (NV) in 2003. Public on NYSE since 2008 (ticker PRIM).</p>
+    </div>
+    <div class="card">
+      <h4><span class="icon-dot util"></span>Headquarters</h4>
+      <p style="font-size:14px;color:var(--text-2);line-height:1.6"><strong>Dallas, TX</strong> — 2300 N. Field St, Suite 1900. Operations across <strong>US + Canada</strong>. ENR rank: <strong>#4 specialty contractor</strong>.</p>
+    </div>
+    <div class="card">
+      <h4><span class="icon-dot bull"></span>People & Iron</h4>
+      <p style="font-size:14px;color:var(--text-2);line-height:1.6"><strong>~18,500 employees</strong> (3,055 salaried + 15,471 hourly). Fleet: <strong>8,000+ vehicles</strong> & 25,000 assets. ~30% hourly are unionized.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:24px" class="card">
+    <h4><span class="icon-dot warn"></span>The two segments — what each builds</h4>
+    <div class="grid-2" style="margin-top:14px">
+      <div style="background:var(--util-soft);border-left:3px solid var(--util);border-radius:8px;padding:18px">
+        <h5 style="color:var(--util);margin-bottom:10px">Utilities (34% of revenue, 2025) — the steady half</h5>
+        <p style="font-size:14px;color:var(--text-2);line-height:1.65">
+          Long-term <strong>Master Service Agreements (MSAs)</strong> with vertically integrated utilities. Recurring, unit-priced work that gets renewed year after year. Top customers: <strong>Oncor</strong> (Texas), <strong>Xcel Energy</strong>, <strong>Pacific Gas & Electric</strong>, <strong>Southern California Gas</strong>, <strong>Duke Energy</strong>, <strong>Sempra</strong>, <strong>Consumers Energy</strong>, <strong>Dominion</strong>, <strong>Florida Power & Light</strong>.
+        </p>
+        <ul style="font-size:13px;color:var(--text-2);margin-top:10px;padding-left:18px;line-height:1.7">
+          <li><strong>Gas distribution & utility services</strong> — burying gas mains, leak repair, metering ($941M revenue '26E)</li>
+          <li><strong>Electric transmission & distribution (T&D)</strong> — power lines, substations, grid hardening ($945M '26E)</li>
+          <li><strong>Telecom / fiber</strong> — burying fiber, 5G tower work ($347M '26E)</li>
+          <li><strong>PLH Group</strong> — power delivery (acquired 2022, $522M '26E)</li>
+        </ul>
+      </div>
+      <div style="background:var(--energy-soft);border-left:3px solid var(--energy);border-radius:8px;padding:18px">
+        <h5 style="color:var(--energy);margin-bottom:10px">Energy (66% of revenue, 2025) — the lumpy half</h5>
+        <p style="font-size:14px;color:var(--text-2);line-height:1.65">
+          Big <strong>fixed-price EPC</strong> projects: engineering, procurement, construction. Bigger margins on big wins, but also where this quarter blew up. Top customers: <strong>Hecate Energy</strong>, <strong>Intersect Power</strong>, <strong>Avantus</strong>, <strong>D.E. Shaw Renewables</strong>, <strong>Williams</strong>, <strong>Valero</strong>, <strong>ExxonMobil</strong>, <strong>Enterprise Pipeline</strong>, <strong>Texas DOT</strong>.
+        </p>
+        <ul style="font-size:13px;color:var(--text-2);margin-top:10px;padding-left:18px;line-height:1.7">
+          <li><strong>Renewables / utility-scale solar</strong> — #2 EPC in US (3.4 GW installed 2024); 90%+ self-perform</li>
+          <li><strong>Pipeline</strong> — large-diameter natural gas pipelines (the cyclical one)</li>
+          <li><strong>Industrial / Gas Generation</strong> — simple-cycle peaker plants (the next leg of growth)</li>
+          <li><strong>Heavy civil</strong> — DOT roadwork, TX & LA</li>
+          <li><strong>Premier PV</strong> — proprietary eBOS manufacturing (Dallas, scaling 1.5GW→4.5GW)</li>
+          <li><strong>PayneCrest Electric</strong> (acquired May '26) — data center interior electrical</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= BUSINESS MODEL ============= -->
+<section id="model">
+  <div class="section-head">
+    <div class="eyebrow">Business model</div>
+    <h2>Why this business is good — and why the same thing makes it dangerous</h2>
+    <p class="lede">
+      The thing that makes Primoris's economics work — they <strong>self-perform</strong> 75-80% of every job — is also the thing that makes them blow up when projects go wrong. There's no subcontractor to absorb the loss. When the job runs hot, Primoris eats the cost overrun. Q1 2026 was a textbook example.
+    </p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4><span class="icon-dot"></span>The "self-perform" moat</h4>
+      <p style="color:var(--text-2);font-size:14px;line-height:1.7">
+        <strong>~75–80% of work done by their own employees and equipment</strong> (vs. subcontracting). In the Renewables sub-segment that figure rises to <strong>90%+</strong>. Like a restaurant that grows its own vegetables and butchers its own meat — more control, more margin, but no one else to blame when the kitchen fire happens.
+      </p>
+      <div class="driver-list" style="margin-top:18px">
+        <div class="driver-row"><div class="lab">Self-perform</div><div class="bar"><div class="fill" style="width:78%;background:var(--bull)"></div></div><div class="num">75–80%</div></div>
+        <div class="driver-row"><div class="lab">Subcontracted</div><div class="bar"><div class="fill" style="width:22%;background:var(--text-3)"></div></div><div class="num">20–25%</div></div>
+        <div class="driver-row"><div class="lab">Renewables self-perform</div><div class="bar"><div class="fill" style="width:92%;background:var(--energy)"></div></div><div class="num">90%+</div></div>
+        <div class="driver-row"><div class="lab">Hourly union members</div><div class="bar"><div class="fill" style="width:30%;background:var(--util)"></div></div><div class="num">~30%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h4><span class="icon-dot util"></span>Backlog quality — not all backlog is equal</h4>
+      <p style="color:var(--text-2);font-size:14px;line-height:1.65;margin-bottom:14px">
+        Of $11.9B total backlog at YE 2025, roughly <strong>$7.5B (65%) is recurring MSA work</strong> with utility customers — predictable, sticky, low-margin. The other $4.4B is <strong>fixed-price project work</strong> — bigger margins but binary outcomes.
+      </p>
+      <div class="chart-box short"><canvas id="chartBacklogMix"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:20px">
+    <div class="mega-card">
+      <div class="icon util">📜</div>
+      <h5>Master Service Agreements (MSAs)</h5>
+      <p>Multi-year framework contracts where the utility commits to using Primoris for ongoing maintenance and small projects. <strong>Like a subscription</strong>. Provides predictable recurring revenue.</p>
+      <div class="stat-line util">$7.5B of $11.9B backlog (65%) — 100% renewal among top 20 utilities since 1999</div>
+    </div>
+    <div class="mega-card">
+      <div class="icon">🏗️</div>
+      <h5>Fixed-Price EPC Projects</h5>
+      <p>Primoris quotes a price upfront for the entire project — Engineering, Procurement, Construction. If costs run hot, <strong>they eat it</strong>. If they run cold, they keep it. The Q1 disaster: 6 solar projects ran hot.</p>
+      <div class="stat-line">$4.4B of backlog (35%) — higher margin, higher risk</div>
+    </div>
+    <div class="mega-card">
+      <div class="icon bull">🔁</div>
+      <h5>Book-to-Bill</h5>
+      <p>Ratio of <strong>new orders / revenue burned</strong>. >1.0x = backlog growing. <1.0x = shrinking. Q4 2025 Energy book/bill spiked to <strong>1.9x</strong> (huge wins). Q1 2026 collapsed to <strong>0.2x</strong> — bookings froze.</p>
+      <div class="stat-line bull">FY2025: 0.8x Energy / 1.0x Utilities → consolidated lumpy</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= EPC 101 ============= -->
+<section id="epc101">
+  <div class="section-head">
+    <div class="eyebrow">EPC 101</div>
+    <h2>The 8 terms you need to read this stock</h2>
+    <p class="lede">
+      Specialty infrastructure has its own jargon. Here's the cheat sheet — you can scan this once and never need to Google again.
+    </p>
+  </div>
+
+  <dl class="glossary">
+    <dl class="glossary-item">
+      <dt><span class="term">EPC</span> — Engineering, Procurement, Construction</dt>
+      <dd>One contractor handles the entire job: designs it (E), buys the equipment & materials (P), builds it (C). Single point of accountability. Primoris is an EPC.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">Self-perform</span></dt>
+      <dd>Doing work with your own employees & equipment instead of subcontracting. Higher control, higher margins on a good day, higher risk on a bad day.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">MSA</span> — Master Service Agreement</dt>
+      <dd>Multi-year framework contract with a utility for ongoing maintenance and small projects. Predictable recurring revenue. ~50% of PRIM backlog.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">Backlog</span></dt>
+      <dd>Total dollar value of awarded work not yet built. $11.9B for PRIM = ~1.5 years of revenue visibility.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">eBOS</span> — electrical Balance of System</dt>
+      <dd>Everything in a solar farm except the panels and inverters: combiner boxes, disconnects, wire harnesses. PRIM has its own brand: <strong>Premier PV</strong>, made in Dallas. Scaling from 1.5GW→4.5GW capacity.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">Peaker plant / Simple-cycle CT</span></dt>
+      <dd>Natural gas turbine that fires up only when grid demand peaks (a few hours/day). Quick to build, high-margin construction. PRIM's next big growth lever — $6B opportunity funnel.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">T&D / Power Delivery</span></dt>
+      <dd>Transmission (high-voltage long-distance lines) & Distribution (low-voltage local). PRIM is shifting mix from 80/20 to 60/40 — more transmission = higher margin.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">OBBBA / IRA</span></dt>
+      <dd>One Big Beautiful Bill Act / Inflation Reduction Act — federal tax credits driving solar EPC demand. Sunset risk post-2030 is the bear case anchor.</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">EBITDA</span></dt>
+      <dd>Earnings Before Interest, Taxes, Depreciation, Amortization. Approximation of operating cash earnings. PRIM 2026E: ~$490M (cut from $570M).</dd>
+    </dl>
+    <dl class="glossary-item">
+      <dt><span class="term">EV/EBITDA</span></dt>
+      <dd>Enterprise Value ÷ EBITDA. The standard valuation multiple for E&C. PRIM trades 13.1x 2027E vs peers at 17.8x — a ~25% discount.</dd>
+    </dl>
+  </dl>
+</section>
+
+<!-- ============= GEOGRAPHIC FOOTPRINT ============= -->
+<section id="footprint">
+  <div class="section-head">
+    <div class="eyebrow">Geographic footprint</div>
+    <h2>Where Primoris actually operates — and why Texas is the prize</h2>
+    <p class="lede">
+      Primoris is headquartered in Dallas and runs nationally, but the engine room is the <strong>Texas/Gulf Coast/Southwest corridor</strong>. The company's deepest customer relationships are with <strong>Oncor</strong> (Texas T&D monopoly), and ERCOT-driven transmission demand is one of three secular tailwinds the bulls cite. Click any state for the operational footprint.
+    </p>
+  </div>
+
+  <div class="map-wrap">
+    <div class="chart-meta">
+      <h4><span class="icon-dot warn"></span>Primoris geographic operations & key customer relationships</h4>
+      <div class="legend-pills">
+        <span class="pill active" id="map-all">All</span>
+        <span class="pill" id="map-energy">Energy focus</span>
+        <span class="pill" id="map-util">Utilities focus</span>
+      </div>
+    </div>
+    <svg class="us-map" viewBox="0 0 950 600" xmlns="http://www.w3.org/2000/svg" id="usMap"></svg>
+    <div class="map-tooltip" id="mapTip"></div>
+    <div class="map-legend">
+      <div class="map-legend-item"><span class="swatch" style="background:rgba(245,185,66,.55);border-color:#f5b942"></span>HQ &amp; primary operations (Dallas, TX)</div>
+      <div class="map-legend-item"><span class="swatch" style="background:rgba(232,112,60,.45);border-color:#e8703c"></span>Energy / Solar / Pipeline / Civil</div>
+      <div class="map-legend-item"><span class="swatch" style="background:rgba(77,126,249,.45);border-color:#4d7ef9"></span>Utilities (T&amp;D, gas, telecom)</div>
+      <div class="map-legend-item"><span class="swatch" style="background:rgba(180,140,90,.55);border-color:#f5b942"></span>Both segments active</div>
+      <div class="map-legend-item"><span class="swatch" style="background:#1a2238;border-color:#34416a"></span>No active operations</div>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:24px">
+    <div class="card">
+      <h4><span class="icon-dot warn"></span>Texas — the heartland</h4>
+      <p style="color:var(--text-2);font-size:13px;line-height:1.6">
+        HQ in Dallas. Decade-long relationship with <strong>Oncor</strong> (TX T&D monopoly) provides sticky baseload revenue. ERCOT-led grid expansion is one of three secular growth drivers. Heavy-civil work for <strong>Texas DOT</strong>. Premier PV (eBOS) plant is in Dallas-Fort Worth.
+      </p>
+    </div>
+    <div class="card">
+      <h4><span class="icon-dot"></span>The "trouble" geographies</h4>
+      <p style="color:var(--text-2);font-size:13px;line-height:1.6">
+        Per Jefferies post-Q1 transcript: the 6 troubled solar projects were <strong>booked in 2H24 in geographies where PRIM lacked a track record</strong>. New mgmt has stopped bidding new work in those areas. Indiana specifically called out (agricultural drain tile / subsurface conditions). Northeast weather also implicated.
+      </p>
+    </div>
+    <div class="card">
+      <h4><span class="icon-dot util"></span>National scale</h4>
+      <p style="color:var(--text-2);font-size:13px;line-height:1.6">
+        Operations span <strong>Florida → Gulf Coast → California → Pacific Northwest → Canada</strong>. ~5,200 staff across multiple regions. Customer set spans <strong>Xcel, PG&E, Southern California Gas, Duke, Sempra, Consumers Energy, Dominion, Florida P&L, Avantus, Hecate Energy, D.E. Shaw, Intersect Power</strong>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============= REVENUE & COST DRIVERS ============= -->
+<section id="drivers">
+  <div class="section-head">
+    <div class="eyebrow">Revenue & cost drivers</div>
+    <h2>The plumbing — what actually moves the P&amp;L</h2>
+    <p class="lede">
+      In an EPC contractor, revenue is driven by <strong>backlog conversion</strong> (how fast orders become billed work) and <strong>book-to-bill</strong> (whether new wins replace burned backlog). Costs are dominated by <strong>craft labor</strong> (~50% of project cost) and <strong>materials/equipment</strong> (~40%). Margin is whatever is left after weather, soil conditions, and scope creep.
+    </p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4><span class="icon-dot"></span>Revenue drivers — what cranks the top line</h4>
+      <div class="driver-list" style="margin-top:14px">
+        <div class="driver-row"><div class="lab">Power delivery (T&amp;D)</div><div class="bar"><div class="fill" style="width:80%;background:var(--util)"></div></div><div class="num">High</div></div>
+        <div class="driver-row"><div class="lab">Utility-scale solar</div><div class="bar"><div class="fill" style="width:75%;background:var(--energy)"></div></div><div class="num">High</div></div>
+        <div class="driver-row"><div class="lab">Gas generation (peakers)</div><div class="bar"><div class="fill" style="width:55%;background:var(--energy)"></div></div><div class="num">Rising</div></div>
+        <div class="driver-row"><div class="lab">Pipeline (large-dia)</div><div class="bar"><div class="fill" style="width:45%;background:var(--energy)"></div></div><div class="num">Cyclical</div></div>
+        <div class="driver-row"><div class="lab">Data center (PayneCrest)</div><div class="bar"><div class="fill" style="width:40%;background:var(--bull)"></div></div><div class="num">Rising</div></div>
+        <div class="driver-row"><div class="lab">Telecom / fiber</div><div class="bar"><div class="fill" style="width:35%;background:var(--util)"></div></div><div class="num">Stable</div></div>
+        <div class="driver-row"><div class="lab">Heavy civil (DOTs)</div><div class="bar"><div class="fill" style="width:25%;background:var(--text-3)"></div></div><div class="num">Niche</div></div>
+        <div class="driver-row"><div class="lab">Storm restoration</div><div class="bar"><div class="fill" style="width:15%;background:var(--warn)"></div></div><div class="num">Optional</div></div>
+      </div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:14px;line-height:1.5">Top 10 customers = 41–53% of revenue (high concentration). Largest single customer pulled forward $500M of demand in 2025 — created tough comps.</p>
+    </div>
+
+    <div class="card">
+      <h4><span class="icon-dot bear"></span>Cost drivers — what chews up margin</h4>
+      <div class="driver-list" style="margin-top:14px">
+        <div class="driver-row"><div class="lab">Craft labor (linemen, electricians, welders)</div><div class="bar"><div class="fill" style="width:50%;background:var(--bear)"></div></div><div class="num">~50%</div></div>
+        <div class="driver-row"><div class="lab">Materials &amp; equipment</div><div class="bar"><div class="fill" style="width:40%;background:var(--energy)"></div></div><div class="num">~40%</div></div>
+        <div class="driver-row"><div class="lab">Subcontractors</div><div class="bar"><div class="fill" style="width:20%;background:var(--text-3)"></div></div><div class="num">~20%</div></div>
+        <div class="driver-row"><div class="lab">SG&amp;A overhead</div><div class="bar"><div class="fill" style="width:5%;background:var(--util)"></div></div><div class="num">5.3%</div></div>
+        <div class="driver-row"><div class="lab">D&amp;A (fleet)</div><div class="bar"><div class="fill" style="width:12%;background:var(--text-3)"></div></div><div class="num">~1.5%</div></div>
+      </div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:14px;line-height:1.5">
+        <strong>Margin killers:</strong> unforeseen subsurface conditions (rock, drain tiles), bad weather, labor scarcity premiums, supply-chain tariffs, project sequencing errors. All of these hit Q1 2026 simultaneously on solar.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="chart-meta">
+      <h4><span class="icon-dot warn"></span>Customer capex tailwind — the bull anchor</h4>
+      <span style="font-size:12px;color:var(--text-3)">Top 10 utility customers' T&amp;D capex projection: <strong>~$145B over 2026-2028</strong></span>
+    </div>
+    <div class="chart-box"><canvas id="chartCapex"></canvas></div>
+    <p style="font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.5">SNL Energy data, GS model: total US utility capex projected to grow from $116B (2018) to $251B (2026E) — a 12% CAGR. Electric utility capex specifically grows from $49B → $104B over the same period (12% CAGR), driving PRIM's Utilities segment.</p>
+  </div>
+</section>
+
+<!-- ============= FINANCIALS ============= -->
+<section id="financials">
+  <div class="section-head">
+    <div class="eyebrow">Financials</div>
+    <h2>Eight years of compounding, then the cliff</h2>
+    <p class="lede">
+      PRIM's revenue has more than doubled since 2018 — from $2.94B to $7.57B. EBITDA tripled. EPS more than doubled. Then 2026 broke the trend: revenue growth slows to ~1%, EBITDA falls 10%, EPS falls 15%. The model assumes recovery starts 2027. Whether that's right is the central debate.
+    </p>
+  </div>
+
+  <div class="stats">
+    <div class="stat bull"><div class="lbl">2025 Revenue</div><div class="val">$7.57B</div><div class="sub">+19% YoY (record)</div></div>
+    <div class="stat bull"><div class="lbl">2025 Adj. EBITDA</div><div class="val">$531M</div><div class="sub">7.0% margin</div></div>
+    <div class="stat bear"><div class="lbl">2026E EBITDA</div><div class="val">$490M</div><div class="sub">−8% YoY (mgmt midpt)</div></div>
+    <div class="stat bear"><div class="lbl">2026E EPS</div><div class="val">$4.90</div><div class="sub">vs $5.62 in '25</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot"></span>Revenue by segment (2018–2028E)</h4>
+        <span style="font-size:11px;color:var(--text-3)">$ billions</span>
+      </div>
+      <div class="chart-box"><canvas id="chartRevenue"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot bull"></span>Adj. EBITDA &amp; margin trend</h4>
+        <span style="font-size:11px;color:var(--text-3)">$M (bars) / % (line)</span>
+      </div>
+      <div class="chart-box"><canvas id="chartEBITDA"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:20px">
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot energy"></span>Quarterly Energy GM% — the cliff in living color</h4>
+        <span style="font-size:11px;color:var(--text-3)">Energy segment gross margin %</span>
+      </div>
+      <div class="chart-box"><canvas id="chartEnergyMargin"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot util"></span>Quarterly Utilities GM% — the saving grace</h4>
+        <span style="font-size:11px;color:var(--text-3)">Utilities segment gross margin %</span>
+      </div>
+      <div class="chart-box"><canvas id="chartUtilMargin"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h4><span class="icon-dot warn"></span>Annual P&amp;L summary — Goldman Sachs model (May 8, 2026)</h4>
+    <div style="overflow-x:auto;margin-top:14px">
+      <table class="tbl">
+        <thead>
+          <tr><th>$M</th><th class="num">2021</th><th class="num">2022</th><th class="num">2023</th><th class="num">2024</th><th class="num">2025</th><th class="num">2026E</th><th class="num">2027E</th><th class="num">2028E</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Utilities Revenue</td><td class="num">1,658</td><td class="num">2,024</td><td class="num">2,380</td><td class="num">2,335</td><td class="num">2,557</td><td class="num">2,755</td><td class="num">2,920</td><td class="num">3,095</td></tr>
+          <tr><td>Energy Revenue</td><td class="num">1,840</td><td class="num">2,396</td><td class="num">3,335</td><td class="num">4,032</td><td class="num">5,019</td><td class="num">4,888</td><td class="num">5,422</td><td class="num">5,748</td></tr>
+          <tr class="highlight"><td><strong>Total Revenue</strong></td><td class="num"><strong>3,498</strong></td><td class="num"><strong>4,421</strong></td><td class="num"><strong>5,715</strong></td><td class="num"><strong>6,367</strong></td><td class="num"><strong>7,575</strong></td><td class="num"><strong>7,643</strong></td><td class="num"><strong>8,342</strong></td><td class="num"><strong>8,843</strong></td></tr>
+          <tr><td>Gross Profit</td><td class="num">417</td><td class="num">457</td><td class="num">588</td><td class="num">703</td><td class="num">813</td><td class="num">779</td><td class="num">878</td><td class="num">931</td></tr>
+          <tr><td>Gross Margin %</td><td class="num">11.9%</td><td class="num">10.3%</td><td class="num">10.3%</td><td class="num">11.0%</td><td class="num">10.7%</td><td class="num">10.2%</td><td class="num">10.5%</td><td class="num">10.5%</td></tr>
+          <tr><td>SG&amp;A</td><td class="num">230</td><td class="num">282</td><td class="num">329</td><td class="num">382</td><td class="num">397</td><td class="num">422</td><td class="num">462</td><td class="num">489</td></tr>
+          <tr><td>Adj. EBITDA</td><td class="num">298</td><td class="num">283</td><td class="num">379</td><td class="num">435</td><td class="num">531</td><td class="num">490</td><td class="num">543</td><td class="num">573</td></tr>
+          <tr><td>EBITDA Margin %</td><td class="num">8.5%</td><td class="num">6.4%</td><td class="num">6.6%</td><td class="num">6.8%</td><td class="num">7.0%</td><td class="num">6.4%</td><td class="num">6.5%</td><td class="num">6.5%</td></tr>
+          <tr><td>Adj. EPS ($)</td><td class="num">$2.70</td><td class="num">$2.56</td><td class="num">$2.85</td><td class="num">$3.86</td><td class="num">$5.62</td><td class="num">$4.84</td><td class="num">$5.51</td><td class="num">$5.93</td></tr>
+          <tr><td>Op Cash Flow</td><td class="num">80</td><td class="num">83</td><td class="num">198</td><td class="num">508</td><td class="num">470</td><td class="num">336</td><td class="num">382</td><td class="num">408</td></tr>
+          <tr><td>Capex</td><td class="num">(134)</td><td class="num">(95)</td><td class="num">(103)</td><td class="num">(127)</td><td class="num">(130)</td><td class="num">(128)</td><td class="num">(132)</td><td class="num">(136)</td></tr>
+          <tr><td>Net Debt / (Cash)</td><td class="num">895</td><td class="num">740</td><td class="num">279</td><td class="num">279</td><td class="num">(66)</td><td class="num">67</td><td class="num">(163)</td><td class="num">(573)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--text-3);margin-top:14px">Source: Goldman Sachs PRIM model (Adam Bubes, CFA, May 8 2026). UBS / Jefferies estimates similar in shape — Jefferies sees 2026 revenue at $7.78B, EBITDA $484M, EPS $4.87.</p>
+  </div>
+</section>
+
+<!-- ============= BACKLOG ============= -->
+<section id="backlog">
+  <div class="section-head">
+    <div class="eyebrow">Backlog & bookings</div>
+    <h2>The leading indicator: $11.9B of work waiting in line</h2>
+    <p class="lede">
+      Backlog is the single best leading indicator for an EPC. Total backlog has 5x'd from $2.2B (2016) to $11.9B (YE 2025). But the composition has shifted: the post-2024 jump was driven by Utilities MSAs (renewed at 100% rate among top 20 customers), while Energy backlog actually <strong>fell ~14% in Q1 2026</strong> as projects were pushed out and bookings froze.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="chart-meta">
+      <h4><span class="icon-dot warn"></span>Quarterly backlog by segment — 2016 Q1 → 2025 Q4</h4>
+      <span style="font-size:12px;color:var(--text-3)">Source: UBS Backlog Model (May 5, 2026); $M, includes fixed + N12M MSA</span>
+    </div>
+    <div class="chart-box tall"><canvas id="chartBacklogQuarterly"></canvas></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:20px">
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot energy"></span>Energy book-to-bill — the warning signal</h4>
+        <span style="font-size:11px;color:var(--text-3)">>1.0x = bookings exceed burn</span>
+      </div>
+      <div class="chart-box"><canvas id="chartBookBill"></canvas></div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.5">
+        Q4 2025: 1.9x book-to-bill (the headline) — but driven by one bulk award. Q1 2026: <strong>0.2x</strong> — a freeze in bookings. The bears say the Q4 spike was a pull-forward, the bulls say it's customer-driven timing of large gas-gen RFP awards.
+      </p>
+    </div>
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot util"></span>Renewables revenue trajectory (Energy sub-segment)</h4>
+        <span style="font-size:11px;color:var(--text-3)">Quarterly $M, 1Q24-1Q26</span>
+      </div>
+      <div class="chart-box"><canvas id="chartRenewables"></canvas></div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.5">
+        Renewables grew from $450M/qtr (1Q24) to $900M/qtr (3Q25) — then crashed to $525M (1Q26). Jefferies now projects renewables peaking at $2.7B (2028) vs prior $3.1B model — a permanent reset.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============= Q1 DISASTER ============= -->
+<section id="q1">
+  <div class="section-head">
+    <div class="eyebrow">The Q1 2026 disaster</div>
+    <h2>Anatomy of a 50% drop — what actually went wrong</h2>
+    <p class="lede">
+      May 5, 2026. Primoris reports Q1. Adj. EBITDA misses by 35%. The 2026 guide gets cut by 14%. The Energy margin range is permanently lowered. The stock falls 50% in one day — wiping $5B of market cap. This is what happened.
+    </p>
+  </div>
+
+  <div class="anatomy-grid">
+    <div class="anatomy-list">
+      <div class="anatomy-item">
+        <div class="num">01</div>
+        <h5>Six solar projects went sideways simultaneously</h5>
+        <p>All booked in 2H24, in geographies where PRIM didn't have a deep operational track record (Indiana, Northeast). Cost overruns of $35-40M booked in Q1 alone.</p>
+      </div>
+      <div class="anatomy-item">
+        <div class="num">02</div>
+        <h5>Subsurface conditions — rock & agricultural drain tiles</h5>
+        <p>Indiana sites had unforeseen underground rock and drainage infrastructure that wasn't in the bid. Each pile drive and each redesign added cost.</p>
+      </div>
+      <div class="anatomy-item">
+        <div class="num">03</div>
+        <h5>Northeast weather + labor productivity issues</h5>
+        <p>Inclement weather, mismanaged crew sequencing across projects, productivity well below bid assumptions.</p>
+      </div>
+      <div class="anatomy-item">
+        <div class="num">04</div>
+        <h5>Project pushouts — $400M of solar revenue moved out of 2026</h5>
+        <p>Customers delaying financial close on new projects → revenue moved to 2027. Adds another $45M EBITDA hit to '26 from underutilized labor & equipment.</p>
+      </div>
+      <div class="anatomy-item">
+        <div class="num">05</div>
+        <h5>Margin range permanently lowered (the structural hit)</h5>
+        <p>Energy segment target margin band: <strong>10–12% → 9–11%</strong>. Bulls say this is just management being conservative; bears say it's an admission that the prior range was unsustainable.</p>
+      </div>
+      <div class="anatomy-item">
+        <div class="num">06</div>
+        <h5>Hagens Berman investigation launched</h5>
+        <p>Plaintiff's law firm launched investigation into whether prior public statements obscured the true health of the renewables portfolio (Q4 2025 had similar — but smaller — issues management called "isolated").</p>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="height:100%;display:flex;flex-direction:column">
+        <h4><span class="icon-dot bear"></span>The reset arithmetic — $80M EBITDA gone</h4>
+        <div class="chart-box" style="flex:1"><canvas id="chartGuideBridge"></canvas></div>
+        <p style="font-size:12px;color:var(--text-3);margin-top:14px;line-height:1.6">
+          Original 2026 guide: <strong>$570M</strong> midpoint. New guide: <strong>$490M</strong>. The $80M cut breaks down: <span style="color:var(--bull)">+$30M from PayneCrest acquisition</span>, <span style="color:var(--bear)">−$35-40M Q1 cost overruns</span>, <span style="color:var(--bear)">−$45M revenue pushout</span>, <span style="color:var(--bear)">−$25M lower margins on completing problem projects</span>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h4><span class="icon-dot warn"></span>The 6 troubled projects — completion timeline (per management)</h4>
+    <div class="grid-3" style="margin-top:14px">
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-family:'JetBrains Mono';color:var(--bull);font-size:12px;margin-bottom:6px">Q2 2026 (NEXT FEW WEEKS)</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">3 of 6 projects</div>
+        <div style="font-size:12px;color:var(--text-2)">Will substantially complete by Jefferies' note date (May 7, 2026). These should stop bleeding margin starting Q2.</div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-family:'JetBrains Mono';color:var(--warn);font-size:12px;margin-bottom:6px">Q3 2026</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">2 of 6 projects</div>
+        <div style="font-size:12px;color:var(--text-2)">Wind-down expected by end of Q3. Energy margin should step up sequentially through 2H.</div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-family:'JetBrains Mono';color:var(--bear);font-size:12px;margin-bottom:6px">Q4 2026</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">1 of 6 projects</div>
+        <div style="font-size:12px;color:var(--text-2)">Final problem project closes by year-end. By Jefferies' framework this should mark the end of solar margin pressure — IF management is right.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= MEGATRENDS / END MARKETS ============= -->
+<section id="mega">
+  <div class="section-head">
+    <div class="eyebrow">End markets &amp; megatrends</div>
+    <h2>The three forces that justify owning this name</h2>
+    <p class="lede">
+      The bull case isn't built on solar — it's built on three secular tailwinds <strong>independent of solar</strong>. AI-driven data center load growth, gas-gen super-cycle, and grid modernization are each a multi-billion-dollar TAM expansion. Primoris is positioned in all three.
+    </p>
+  </div>
+
+  <div class="mega-grid">
+    <div class="mega-card">
+      <div class="icon">⚡</div>
+      <h5>Data center buildout (AI super-cycle)</h5>
+      <p>
+        Hyperscaler capex driving multi-year demand for site prep, power generation, grid interconnection, and now <strong>"inside the box" electrical work</strong> — interior wiring of the data hall itself. This is exactly what PayneCrest brought.
+      </p>
+      <div class="stat-line">PayneCrest = ~40% data center exposure. PRIM did $850M of "outside-the-box" data-center enabling work in 2025.</div>
+    </div>
+    <div class="mega-card">
+      <div class="icon util">🔌</div>
+      <h5>Grid modernization (transmission super-cycle)</h5>
+      <p>
+        Top 10 US utilities project <strong>~$145B of T&amp;D capex over 2026-2028</strong>. PRIM is intentionally shifting its mix from 80/20 distribution-to-transmission toward 60/40 — higher complexity, higher margins.
+      </p>
+      <div class="stat-line util">SNL: total US utility capex $116B (2018) → $251B (2026E). Electric utility capex 2x'd.</div>
+    </div>
+    <div class="mega-card">
+      <div class="icon bull">🔥</div>
+      <h5>Gas generation super-cycle (peakers)</h5>
+      <p>
+        Data centers + AI need <strong>dispatchable power</strong> — solar/wind aren't always-on. Simple-cycle natural gas peakers are the answer. PRIM is one of few EPCs with the niche expertise. <strong>$6B opportunity funnel.</strong>
+      </p>
+      <div class="stat-line bull">$1.5-2.0B near-term funnel; $800M of "verbal" awards expected to firm up in 2H 2026 (key catalyst).</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px">
+    <h4><span class="icon-dot"></span>The renewables outlook — no longer the growth engine</h4>
+    <p style="color:var(--text-2);font-size:14px;line-height:1.7;margin-top:10px">
+      Per Jefferies post-Q1: PRIM has stopped pursuing the geographies that caused the trouble. Renewables now projected to peak at <strong>$2.7B in 2028</strong> (from $3.0B in 2025), down from prior $3.1B model. The OBBBA tax-credit cliff post-2030 caps long-term solar growth. Gas gen is the replacement story. Battery storage is a smaller adjacency (~$250M in 2025).
+    </p>
+    <div class="grid-3" style="margin-top:18px">
+      <div class="deal-stat"><div class="lbl">'25 Renewables Rev</div><div class="val">$3.0B</div></div>
+      <div class="deal-stat"><div class="lbl">'26E Renewables (rebased)</div><div class="val">$2.5B</div></div>
+      <div class="deal-stat"><div class="lbl">'28E Renewables (peak)</div><div class="val">$2.7B</div></div>
+      <div class="deal-stat"><div class="lbl">'25 Pipeline Rev</div><div class="val">$375M</div></div>
+      <div class="deal-stat"><div class="lbl">'25 Civil Rev</div><div class="val">$600M</div></div>
+      <div class="deal-stat"><div class="lbl">'25 Industrial / Gas Gen</div><div class="val">$1.04B</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= PAYNECREST ============= -->
+<section id="paynecrest">
+  <div class="section-head">
+    <div class="eyebrow">M&amp;A spotlight</div>
+    <h2>PayneCrest Electric — the data center play</h2>
+    <p class="lede">
+      Closed May 1, 2026. $399.5M cash for a Missouri-based interior-electrical contractor. Adds the missing piece — the work <em>inside</em> data center buildings — to PRIM's existing capability for the work outside. Done at 10.6x EBITDA, 3-4 turns below where PRIM trades. <strong>Immediate multiple arbitrage</strong>.
+    </p>
+  </div>
+
+  <div class="deal-box">
+    <div>
+      <h4 style="margin-bottom:18px"><span class="icon-dot warn"></span>Deal mechanics</h4>
+      <div class="deal-stats">
+        <div class="deal-stat"><div class="lbl">Purchase price</div><div class="val">$399.5M</div></div>
+        <div class="deal-stat"><div class="lbl">EV/EBITDA paid</div><div class="val">10.6x</div></div>
+        <div class="deal-stat"><div class="lbl">PayneCrest EBITDA mgn</div><div class="val acc">10.8%</div></div>
+        <div class="deal-stat"><div class="lbl">Above PRIM '25 mgn</div><div class="val acc">+380 bps</div></div>
+        <div class="deal-stat"><div class="lbl">'26 Rev contribution</div><div class="val">$260-280M</div></div>
+        <div class="deal-stat"><div class="lbl">'26 EBITDA contrib.</div><div class="val">$38-42M</div></div>
+        <div class="deal-stat"><div class="lbl">Data center revenue</div><div class="val">~40%</div></div>
+        <div class="deal-stat"><div class="lbl">Pro-forma net leverage</div><div class="val">0.7-1.0x</div></div>
+      </div>
+      <p style="font-size:13px;color:var(--text-2);line-height:1.6;margin-top:8px">
+        Funded with cash on hand + new term-loan borrowings. PRIM's $750M revolver had $50M drawn post-close, leaving $690M of capacity. <strong>Net leverage stays well below 1.5x target</strong>.
+      </p>
+    </div>
+    <div>
+      <h4 style="margin-bottom:18px"><span class="icon-dot bull"></span>The strategic logic</h4>
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:14px">
+        Before PayneCrest, PRIM could do site prep, build the substation, and run transmission to the data center — but had to <strong>subcontract the interior wiring</strong>. After PayneCrest, PRIM can pitch <strong>"true turnkey"</strong> for hyperscaler campuses. One contract, one accountability point, no margin leak to subs.
+      </p>
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:14px">
+        Beyond data centers, PayneCrest also services <strong>aerospace, pharmaceuticals, and advanced manufacturing</strong> — broadens the TAM. Bridges electrical capabilities across PRIM's Renewables, Power, and Industrial offerings.
+      </p>
+      <p style="font-size:13px;color:var(--text-3);line-height:1.6">
+        Past PRIM acquisitions: PLH Group (2022, $470M, power delivery), Future Infrastructure (2021, $620M, comms), Willbros (2018, $138M, oil &amp; gas pipelines). PayneCrest is the largest data-center-focused deal.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============= VALUATION ============= -->
+<section id="valuation">
+  <div class="section-head">
+    <div class="eyebrow">Valuation</div>
+    <h2>Trading at a 30%+ discount to peers — but with reason</h2>
+    <p class="lede">
+      Specialty E&amp;C peers (Quanta, MasTec, EMCOR, Dycom, MYR Group) trade at <strong>17-27x</strong> 2026E EV/EBITDA. PRIM trades at <strong>13-15x</strong>. The discount is real, but so are the reasons: lower margins, customer concentration, recent execution misses. The bull case is multiple expansion as PRIM proves out its mix shift.
+    </p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot"></span>2026E EV/EBITDA — peer comp</h4>
+      </div>
+      <div class="chart-box"><canvas id="chartPeer"></canvas></div>
+      <p style="font-size:11px;color:var(--text-3);margin-top:10px">PRIM at 15.3x is <strong>4.7 turns below</strong> peer average of 20x. Even matching peers would deliver ~30% upside before any earnings improvement.</p>
+    </div>
+    <div class="card">
+      <div class="chart-meta">
+        <h4><span class="icon-dot util"></span>Margin &amp; ROIC vs peers</h4>
+      </div>
+      <div class="chart-box"><canvas id="chartScatter"></canvas></div>
+      <p style="font-size:11px;color:var(--text-3);margin-top:10px">PRIM's <strong>11.3% ROIC is best-in-class</strong> — higher than PWR (8.9%) or MTZ (9.2%) — but EBITDA margin (6.6%) is lowest of the three. Roth's bull thesis hangs on this ROIC.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h4><span class="icon-dot warn"></span>Broker price targets &amp; methodologies</h4>
+    <p style="font-size:13px;color:var(--text-3);margin-bottom:18px">Pre-Q1 prints (in italics) and post-Q1 updates. PT range is wide — Goldman bear at $107 vs. Needham bull at $205. That's a 90% spread, which is unusual. The split reflects genuine disagreement about whether the margin reset is structural.</p>
+    <div class="broker-grid">
+      <div class="broker-card">
+        <div class="name">Jefferies</div>
+        <span class="rating buy">BUY</span>
+        <div class="pt">$152</div>
+        <div class="upside pos">+50% upside</div>
+        <div class="note">Cut from $195 post-Q1. Applies 30% peer discount for execution risk. 14.3x 2027E EV/EBITDA.</div>
+      </div>
+      <div class="broker-card">
+        <div class="name">Goldman Sachs</div>
+        <span class="rating sell">SELL</span>
+        <div class="pt">$107</div>
+        <div class="upside neg">−1% downside</div>
+        <div class="note">SELL since Nov 2025. Sees structural margin reset, not transitory. 12.5x 2026E EV/EBITDA.</div>
+      </div>
+      <div class="broker-card">
+        <div class="name">UBS</div>
+        <span class="rating buy">BUY</span>
+        <div class="pt">$212*</div>
+        <div class="upside pos">~+95% upside</div>
+        <div class="note">PT pre-update post-Q1. Was $176 pre-print at $132 stock. Will likely rebase. 14x '27E EBITDA.</div>
+      </div>
+      <div class="broker-card">
+        <div class="name">KeyBanc</div>
+        <span class="rating buy">BUY</span>
+        <div class="pt">$179</div>
+        <div class="upside pos">+66% upside</div>
+        <div class="note">Overweight. 15.0x 2027E EBITDA. Sees gas-gen conversion as catalyst.</div>
+      </div>
+      <div class="broker-card">
+        <div class="name">Mizuho</div>
+        <span class="rating neutral">NEUTRAL</span>
+        <div class="pt">$175</div>
+        <div class="upside pos">+62% upside</div>
+        <div class="note">14.0x 2027E EBITDA (2 turns below peers). Bear case $129. Bull $229.</div>
+      </div>
+      <div class="broker-card">
+        <div class="name">Guggenheim</div>
+        <span class="rating buy">BUY</span>
+        <div class="pt">$195</div>
+        <div class="upside pos">+81% upside</div>
+        <div class="note">18.0x 2026E EBITDA target. Even at PT, still slight discount to premium peers.</div>
+      </div>
+      <div class="broker-card">
+        <div class="name">Needham</div>
+        <span class="rating buy">BUY</span>
+        <div class="pt">$205</div>
+        <div class="upside pos">+90% upside</div>
+        <div class="note">Multi-engine growth thesis. AI-driven data center / grid / gas-gen tailwind.</div>
+      </div>
+      <div class="broker-card">
+        <div class="name">Roth Capital</div>
+        <span class="rating buy">BUY</span>
+        <div class="pt">$170</div>
+        <div class="upside pos">+57% upside</div>
+        <div class="note">16.0x 2026E EBITDA. 14% premium to peers justified by best-in-class ROIC (~13%).</div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text-3);margin-top:14px">*UBS PT shown as of May 5 First Read; likely to rebase. Consensus PT ~$157 (15 analysts). Buy/Hold/Sell split: 6/2/1 — but post-Q1 ratings actions still being telegraphed.</p>
+  </div>
+</section>
+
+<!-- ============= BULL VS BEAR ============= -->
+<section id="debate">
+  <div class="section-head">
+    <div class="eyebrow">The debate</div>
+    <h2>Bull vs Bear — the case in 8 points each</h2>
+    <p class="lede">
+      Three brokers, three verdicts. Goldman SELL ($107), Jefferies BUY ($152), UBS BUY ($212). The disagreement isn't on the facts — everyone agrees on the Q1 numbers. It's on whether the margin reset is structural or transitory, and whether gas-gen bookings will materialize on schedule.
+    </p>
+  </div>
+
+  <div class="debate-grid">
+    <div class="debate-card bull">
+      <h3>🐂 Bull case — Jefferies / UBS / Needham / Guggenheim</h3>
+      <ul class="debate-list">
+        <li><strong>Multiple expansion at peer rates</strong><span>15.3x → 20x = 30% upside before any earnings beat. PRIM is "specialty E&amp;C catch-up trade."</span></li>
+        <li><strong>$6B gas-gen pipeline</strong><span>Replaces moderating solar as primary growth engine. $800M of "verbal" awards expected to firm up 2H 2026.</span></li>
+        <li><strong>PayneCrest is accretive</strong><span>$260-280M revenue, $38-42M EBITDA, 10.8% margin (380 bps above PRIM). Bought at 10.6x — 3-4 turns of arbitrage.</span></li>
+        <li><strong>Utility capex super-cycle</strong><span>Top 10 customers projecting $145B T&amp;D capex over '26-'28. Q1 utility GP beat by 21%.</span></li>
+        <li><strong>Data center "inside-the-box"</strong><span>True turnkey for hyperscalers — Mizuho models data center segment 15% CAGR through 2030.</span></li>
+        <li><strong>Best-in-class ROIC</strong><span>~13% — higher than PWR (8.9%) or MTZ (9.2%). Disciplined capital deployment.</span></li>
+        <li><strong>Net cash balance sheet</strong><span>End of '25 net cash $66M. Post-PayneCrest leverage 0.7x — well below 1.5x target. Dry powder for more M&amp;A.</span></li>
+        <li><strong>The dip is mathematically overdone</strong><span>$110M FY26 EBITDA reset implies $1-2B PV impact. Stock lost $5B mkt cap. Per Jefferies: "the market is overshooting."</span></li>
+      </ul>
+    </div>
+
+    <div class="debate-card bear">
+      <h3>🐻 Bear case — Goldman / Mizuho-leaning / Expert Calls</h3>
+      <ul class="debate-list">
+        <li><strong>Margin reset is structural, not transitory</strong><span>Energy margin range officially lowered 10-12% → 9-11%. That's not a one-quarter blip — it's an admission of lower earning power.</span></li>
+        <li><strong>Three quarters in a row of operational issues</strong><span>Q4'25 isolated soil → Q1'26 six projects. Pattern, not anomaly. Internal cost-tracking systems may be inadequate.</span></li>
+        <li><strong>Customer concentration risk</strong><span>Top 10 = 41% of revenue (53% in 2025). MSAs have no minimum purchase commitment — can lump down hard.</span></li>
+        <li><strong>Executive turnover &amp; talent leakage</strong><span>Former CEO Tom McCormick left Mar '25. Multiple VPs/directors left for Pike, MYR, Ferreira. Per Expert Call: "lost work in Texas because of departures."</span></li>
+        <li><strong>Fixed-price contract risk is permanent</strong><span>EPC takes all the cost-overrun risk. Unforeseen subsurface conditions, weather, labor shortage — all flow to PRIM's P&amp;L. This won't change.</span></li>
+        <li><strong>Q1 2026 book-to-bill of 0.2x</strong><span>Bookings froze. Energy backlog −14% QoQ. Until gas-gen verbal awards firm up, growth runway is unproven.</span></li>
+        <li><strong>OBBBA / IRA cliff post-2030</strong><span>Solar tax credits sunset. Renewables peak now projected $2.7B (2028) — below 2025's $3.0B. Permanent shrinkage.</span></li>
+        <li><strong>Hagens Berman investigation</strong><span>Plaintiff law-firm probe into whether prior public statements obscured renewables health. Adds tail-risk for next 12 months.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px">
+    <h4><span class="icon-dot warn"></span>The unresolved questions — what would settle the debate</h4>
+    <div class="grid-3" style="margin-top:14px">
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--energy);font-size:13px">Q1: Are solar margin issues ring-fenced?</div>
+        <div style="font-size:12px;color:var(--text-2);line-height:1.5">Mgmt says yes — 6 specific projects, isolated geographies, no new bids in those areas. Bears want proof in Q2/Q3 prints.</div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--util);font-size:13px">Q2: Can PRIM execute turnkey data centers?</div>
+        <div style="font-size:12px;color:var(--text-2);line-height:1.5">PayneCrest integration risk + first hyperscaler contract execution. Compressed timelines, tight margins. Unproven.</div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--bull);font-size:13px">Q3: Will gas-gen $800M firm up?</div>
+        <div style="font-size:12px;color:var(--text-2);line-height:1.5">"Verbal" awards expected to convert to backlog in 2H 2026. If they don't, the entire bull thesis loses its anchor.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= RISKS ============= -->
+<section id="risks">
+  <div class="section-head">
+    <div class="eyebrow">Key risks</div>
+    <h2>What could break this story — ranked by severity</h2>
+    <p class="lede">
+      The unwind risk in PRIM is not the macro economy — it's idiosyncratic execution. Eight specific risks are well-flagged in the broker reports. Severity rated 1-5 below.
+    </p>
+  </div>
+
+  <div class="risk-grid">
+    <div class="risk-card">
+      <div class="header">
+        <h5>Fixed-price contract execution</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></div>
+      </div>
+      <p>EPC takes all cost-overrun risk. Q1 2026 demonstrated this. Cannot be eliminated structurally — labor productivity, subsurface conditions, weather are inherent.</p>
+    </div>
+    <div class="risk-card">
+      <div class="header">
+        <h5>Customer concentration</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+      </div>
+      <p>Top 10 customers = 41-53% of revenue. MSAs have no minimum purchase. A single hyperscaler/utility pull-back can swing a quarter.</p>
+    </div>
+    <div class="risk-card">
+      <div class="header">
+        <h5>Executive turnover / talent leakage</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+      </div>
+      <p>Former CEO McCormick out March '25. New CEO Vadlamudi (ex-Jacobs) installed Nov '25. VPs left for Pike, MYR, Ferreira. Per Expert Calls: lost contracts in Texas as a direct result.</p>
+    </div>
+    <div class="risk-card">
+      <div class="header">
+        <h5>Craft labor scarcity</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+      </div>
+      <p>Aging utility workforce + AI-driven demand surge. Linemen, electricians, welders — all in short supply. Forces premium wages, which compress margins on legacy bids.</p>
+    </div>
+    <div class="risk-card">
+      <div class="header">
+        <h5>OBBBA / IRA tax credit modifications</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
+      </div>
+      <p>Aggressive modifications could derail developer capex. PRIM contracts have inflation pass-through but not policy-shock pass-through. Solar specifically vulnerable.</p>
+    </div>
+    <div class="risk-card">
+      <div class="header">
+        <h5>PayneCrest integration</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
+      </div>
+      <p>$400M deal, $42M EBITDA target. PLH Group (2022) per former exec "less successful than mgmt hoped" — cultural friction. PayneCrest is bigger, more time-pressured (data center timelines).</p>
+    </div>
+    <div class="risk-card">
+      <div class="header">
+        <h5>Hagens Berman investigation</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></div>
+      </div>
+      <p>Plaintiff probe launched May 2026 into prior public statements re renewables. Could result in disclosure-driven downside or class action overhang.</p>
+    </div>
+    <div class="risk-card">
+      <div class="header">
+        <h5>Wildfire liabilities (utility work)</h5>
+        <div class="risk-meter"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></div>
+      </div>
+      <p>Per Mizuho: catastrophic wildfire claims tied to utility transmission work in CA could create tail-risk. Industry-wide concern, not PRIM-specific.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============= CATALYSTS ============= -->
+<section id="catalysts">
+  <div class="section-head">
+    <div class="eyebrow">Catalysts &amp; timeline</div>
+    <h2>Dateable events — what to watch from here</h2>
+    <p class="lede">
+      The bear case anchors at $107 (Goldman SELL). The bull case at $152-205. The trade is binary on a few specific events over the next 9 months. Here they are in date order.
+    </p>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <h4 style="margin-bottom:18px;font-size:16px">📅 Forward catalysts</h4>
+      <div class="cat-list">
+        <div class="cat-card future">
+          <div class="when">EARLY AUGUST 2026</div>
+          <h5>Q2 2026 earnings print</h5>
+          <p>The first proof-or-bust event. 3 of 6 troubled solar projects should be wrapped. Solar margins should step up sequentially. Critical: do gas-gen bookings start to firm up?</p>
+        </div>
+        <div class="cat-card future">
+          <div class="when">2H 2026</div>
+          <h5>$800M gas-gen verbal awards convert</h5>
+          <p>If they materialize as firm backlog, the bull thesis works. If they slip, Jefferies' $152 PT gets cut again.</p>
+        </div>
+        <div class="cat-card future">
+          <div class="when">JUNE 2026</div>
+          <h5>Russell 1000 reconstitution (estimated)</h5>
+          <p>Per Stephens, PRIM tracked as candidate for Russell 1000 inclusion. Index inclusion = forced passive buying.</p>
+        </div>
+        <div class="cat-card future">
+          <div class="when">EARLY NOVEMBER 2026</div>
+          <h5>Q3 2026 earnings print</h5>
+          <p>2 more troubled projects close. PayneCrest first full quarter of integrated results. The cleanest test of the "margin recovery" thesis.</p>
+        </div>
+        <div class="cat-card future">
+          <div class="when">LATE 2026 / EARLY 2027</div>
+          <h5>Analyst Day (per Jefferies)</h5>
+          <p>New CEO Vadlamudi expected to reset multi-year financial targets through 2029. Long-term margin/growth framework will reset valuations.</p>
+        </div>
+        <div class="cat-card future">
+          <div class="when">FEBRUARY 2027</div>
+          <h5>FY26 print + 2027 guide</h5>
+          <p>Final problem solar project closed. First clean FY guide post-reset. The "show me" stock either delivers or loses Buy ratings.</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h4 style="margin-bottom:18px;font-size:16px">📅 Recent timeline</h4>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="date">MAY 5-7, 2026</div>
+          <h5>Q1 disaster + 50% drop + $5B mkt cap erased</h5>
+          <p>Q1 EBITDA misses by 35%. 2026 guide cut. Hagens Berman investigation launched. Multiple PT cuts (Jefferies $195→$152). Goldman maintains SELL $107.</p>
+        </div>
+        <div class="tl-item">
+          <div class="date">MAY 1, 2026</div>
+          <h5>PayneCrest acquisition closes</h5>
+          <p>$399.5M cash. Adds inside-the-box electrical for data centers. 10.6x EBITDA paid.</p>
+        </div>
+        <div class="tl-item past">
+          <div class="date">FEB 24, 2026</div>
+          <h5>Q4 2025 results — record year, pre-disaster</h5>
+          <p>Q4 EBITDA $108M. Adj EPS $1.08. 2026 guide $560-580M EBITDA / $5.80-6.00 EPS. Energy backlog jumps $1B sequentially (1.9x book/bill).</p>
+        </div>
+        <div class="tl-item past">
+          <div class="date">NOV 10, 2025</div>
+          <h5>New CEO Koti Vadlamudi installed</h5>
+          <p>Ex-Jacobs Engineering EVP Operations. 30-yr industry vet. Replaces interim CEO David King.</p>
+        </div>
+        <div class="tl-item past">
+          <div class="date">MAR 14, 2025</div>
+          <h5>Former CEO Tom McCormick departs</h5>
+          <p>"Without cause." Chairman David King steps in as interim. Begins talent leakage cycle.</p>
+        </div>
+        <div class="tl-item past">
+          <div class="date">2022</div>
+          <h5>PLH Group acquired ($470M)</h5>
+          <p>Power delivery / electric grid infrastructure. Per former exec: integration "less successful than mgmt hoped" due to cultural friction.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= GLOSSARY ============= -->
+<section id="glossary">
+  <div class="section-head">
+    <div class="eyebrow">Reference</div>
+    <h2>Quick-reference glossary</h2>
+    <p class="lede">
+      Bookmark this section. These are the terms you'll see in every PRIM call, broker report, and 10-K — and that you need to fluently hold in your head.
+    </p>
+  </div>
+
+  <dl class="glossary">
+    <dl class="glossary-item"><dt><span class="term">Backlog</span></dt><dd>Awarded but un-built work. PRIM Dec 2025: $11.9B. Includes both fixed-price (binding) and N12M MSA (recurring framework agreements).</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Book-to-bill</span></dt><dd>(New orders ÷ revenue burned) for a period. >1.0x = backlog growing. PRIM Q4 25 Energy: 1.9x. Q1 26: 0.2x.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Burn rate</span></dt><dd>Revenue recognized per quarter from backlog. Implies how long current backlog will last (PRIM ~1.5 years).</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">EPC</span></dt><dd>Engineering, Procurement, Construction. Single contractor handles all three phases. PRIM is one of largest US EPCs.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">eBOS</span></dt><dd>Electrical Balance of System — solar farm components excluding panels &amp; inverters. PRIM brand: Premier PV.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">ERCOT</span></dt><dd>Electric Reliability Council of Texas — TX's power grid operator. Major source of T&amp;D demand.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">FERC</span></dt><dd>Federal Energy Regulatory Commission. Controls interstate electric &amp; gas regulation.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Fixed-price contract</span></dt><dd>EPC quotes one price; eats overruns, keeps savings. High-risk/high-reward. PRIM ~35% of backlog.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Hyperscaler</span></dt><dd>Mega data center operators (AWS, Google, Meta, Microsoft, Oracle). Largest source of new electrical / cooling / fiber demand.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">IRA</span></dt><dd>Inflation Reduction Act 2022. Tax credits for solar/storage. Driving force of solar EPC growth — sunset risk post-2030.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">MSA</span></dt><dd>Master Service Agreement. Multi-year framework with utility. Recurring, lower-margin, high-renewal-rate work.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">OBBBA</span></dt><dd>"One Big Beautiful Bill Act" — successor framework expected to extend / restructure post-IRA tax credits.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Peaker plant</span></dt><dd>Simple-cycle gas turbine that runs only at grid demand peaks. Quick to deploy, high-margin EPC. Gas-gen super-cycle.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">PJM</span></dt><dd>Mid-Atlantic regional grid (PA, NJ, MD, VA, etc.). Major data center / gas-gen demand zone.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Power Delivery</span></dt><dd>T&amp;D + substations + grid infrastructure. PRIM's intentional mix shift: 80/20 distribution-to-transmission → 60/40 (higher margin).</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Self-perform</span></dt><dd>Doing work with own employees / equipment vs. subcontracting. PRIM 75-80% overall, 90%+ in renewables.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Substantial completion</span></dt><dd>Project milestone where principal performance is done; turn over to customer. Most cost overruns happen before this milestone.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">T&amp;D</span></dt><dd>Transmission &amp; Distribution. High-voltage long-distance lines + low-voltage local feeders.</dd></dl>
+    <dl class="glossary-item"><dt><span class="term">Unit-price contract</span></dt><dd>Per-unit pricing for repeated tasks (vs. fixed-price for whole project). Lower risk, lower margin. ~60% of utility segment.</dd></dl>
+  </dl>
+</section>
+
+<footer>
+  <div style="max-width:880px;margin:0 auto">
+    <strong>Primoris Services Corp (NYSE: PRIM) — First-Principles Research Dashboard</strong><br/>
+    Built May 10, 2026 from primary-source broker reports and AlphaSense primers. Single static HTML, Chart.js, no backend. Source data current through Q1 2026 earnings (May 5).
+    <div class="src">
+      <strong>Sources:</strong> UBS (Steven Fisher 5/5/2026, 3/12/2026, 2/24/2026), Goldman Sachs (Adam Bubes 5/5/2026, 5/7/2026, 5/8/2026 model), Jefferies (Justin Hauke 5/6/2026, 5/7/2026, 2/27/2026), AlphaSense (Company Primer 5/10, Bull/Bear 5/10, Quality 5/10), Primoris 10-K (FY2025), 10-Q (Q1 2026), Press Releases. Geographic detail from PRIM Annual Report &amp; SEC filings via Wikipedia / Industrial Info Resources / company website. Web search supplemented for stock price (May 7) and employee headcount (Dec 2025).
+      <br/><br/>
+      Not investment advice. For research/educational use.
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============= DATA ============= */
+const ANNUAL = {
+  years: ['2018','2019','2020','2021','2022','2023','2024','2025','2026E','2027E','2028E'],
+  utilRev: [1190,1384,1366,1658,2024,2380,2335,2557,2755,2920,3095],
+  energyRev: [1750,1723,2126,1840,2396,3335,4032,5019,4888,5422,5748],
+  totalRev: [2940,3107,3492,3498,4421,5715,6367,7575,7643,8342,8843],
+  ebitda: [210,226,250,298,283,379,435,531,490,543,573],
+  ebitdaMgn: [7.1,7.3,7.2,8.5,6.4,6.6,6.8,7.0,6.4,6.5,6.5],
+  eps: [1.50,1.60,2.20,2.70,2.56,2.85,3.86,5.62,4.84,5.51,5.93],
+};
+const QUARTERS = {
+  labels: ['1Q24','2Q24','3Q24','4Q24','1Q25','2Q25','3Q25','4Q25','1Q26'],
+  energyGM: [11.0,12.6,11.0,9.5,10.7,10.9,10.1,8.5,7.6],
+  utilGM:   [6.3,10.9,13.6,12.5,9.6,14.9,12.4,11.0,9.8],
+  energyRev:[948,973,1011,1100,1108,1237,1486,1188,955],
+  utilRev:  [465,590,638,641,540,654,693,670,605],
+  energyBookBill:[0.6,1.0,1.8,1.4,0.5,0.6,0.4,1.8,0.2],
+  renewablesRev:[450,435,450,625,650,660,900,790,525],
+};
+const BACKLOG = {
+  labels: [
+    '1Q16','2Q16','3Q16','4Q16','1Q17','2Q17','3Q17','4Q17','1Q18','2Q18','3Q18','4Q18',
+    '1Q19','2Q19','3Q19','4Q19','1Q20','2Q20','3Q20','4Q20','1Q21','2Q21','3Q21','4Q21',
+    '1Q22','2Q22','3Q22','4Q22','1Q23','2Q23','3Q23','4Q23','1Q24','2Q24','3Q24','4Q24',
+    '1Q25','2Q25','3Q25','4Q25'
+  ],
+  energy: [1173,985,1146,1139,1209,1159,1143,1047,977,914,799,873,1009,1075,1122,1074,1067,1498,1492,1354,1386,1205,1222,2455,2433,2879,3125,3165,3602,4609,4772,5705,5284,5213,5935,6344,5777,5463,4470,5522],
+  utilities: [547,491,519,607,672,664,623,739,841,1009,1039,1184,1271,1255,1234,1241,1135,1110,1116,1045,1388,1404,1350,1384,1462,1559,1889,1833,1957,1980,1915,1873,5338,5241,5326,5521,5609,6031,6593,6423],
+  total: [2195,1913,2695,2798,2799,2750,2616,2599,2606,2834,2707,2760,2940,3197,3211,3178,3204,3526,2974,2777,3088,2870,2739,4003,4025,4572,5472,5484,5559,6589,6687,7578,10622,10454,11261,11865,11386,11494,11063,11945],
+};
+const PEERS = {
+  labels:['Quanta (PWR)','MasTec (MTZ)','EMCOR (EME)','MYR Group','Dycom (DY)','Peer Avg','PRIM'],
+  ev2026:[27.2,21.7,18.6,18.3,14.2,20.0,15.3],
+  ev2027:[24.3,18.4,17.4,16.2,12.6,17.8,13.1],
+};
+const SCATTER = {
+  data: [
+    {company:'PWR (Quanta)',  rev:28.47, ebitdaMgn:8.85, roic:8.9,  evEbitda:34.5},
+    {company:'MTZ (MasTec)',  rev:14.29, ebitdaMgn:7.80, roic:9.2,  evEbitda:24.9},
+    {company:'PRIM',          rev:7.57,  ebitdaMgn:6.64, roic:11.3, evEbitda:10.86},
+  ],
+};
+const BROKERS = [
+  {name:'Goldman',rating:'SELL',pt:107,date:'5/7'},
+  {name:'Jefferies',rating:'BUY',pt:152,date:'5/7'},
+  {name:'Mizuho',rating:'NEUT',pt:175,date:'4/6'},
+  {name:'Roth',rating:'BUY',pt:170,date:'10/8'},
+  {name:'KeyBanc',rating:'BUY',pt:179,date:'3/31'},
+  {name:'Guggenheim',rating:'BUY',pt:195,date:'4/20'},
+  {name:'Needham',rating:'BUY',pt:205,date:'10/22'},
+  {name:'UBS',rating:'BUY',pt:212,date:'5/5'},
+];
+const CAPEX = {
+  years:['2018','2019','2020','2021','2022','2023','2024','2025','2026E','2027E','2028E'],
+  total:[116,126,130,132,146,169,179,220,251,256,256],
+  electric:[49,54,54,56,60,69,72,84,104,105,105],
+  gas:[4.5,5.6,5.5,5.6,6.3,7.0,7.7,8.7,9.2,8.8,8.8],
+};
+
+/* ============= COUNTERS ============= */
+function animateCounters(){
+  document.querySelectorAll('[data-counter]').forEach(el=>{
+    const target = parseFloat(el.dataset.counter);
+    const decimals = parseInt(el.dataset.decimals||0);
+    const prefix = el.dataset.prefix||'';
+    const suffix = el.dataset.suffix||'';
+    const dur = 1400;
+    const start = performance.now();
+    const startVal = 0;
+    function step(now){
+      const elapsed = now - start;
+      const t = Math.min(elapsed/dur, 1);
+      const eased = 1 - Math.pow(1-t, 3);
+      const v = startVal + (target-startVal)*eased;
+      el.textContent = prefix + v.toFixed(decimals) + suffix;
+      if(t<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      animateCounters();
+      obs.disconnect();
+    }
+  });
+},{threshold:0.3});
+obs.observe(document.querySelector('.kpi-row'));
+
+/* ============= CHART DEFAULTS ============= */
+Chart.defaults.color = '#aab4cc';
+Chart.defaults.font.family = 'Inter, sans-serif';
+Chart.defaults.borderColor = 'rgba(38,50,77,.5)';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.padding = 14;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(8,11,20,.95)';
+Chart.defaults.plugins.tooltip.borderColor = '#34416a';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.padding = 12;
+Chart.defaults.plugins.tooltip.cornerRadius = 8;
+Chart.defaults.plugins.tooltip.titleFont = {weight:'600',size:12};
+Chart.defaults.plugins.tooltip.bodyFont = {size:12};
+
+/* ============= CHART: BROKER PT SCATTER ============= */
+new Chart(document.getElementById('chartBrokerPT'), {
+  type: 'bar',
+  data: {
+    labels: BROKERS.map(b=>b.name),
+    datasets: [{
+      label: '12-mo Price Target ($)',
+      data: BROKERS.map(b=>b.pt),
+      backgroundColor: BROKERS.map(b=>b.rating==='SELL'?'#ef4565':b.rating==='NEUT'?'#f5b942':'#3acc8f'),
+      borderRadius: 6,
+    }],
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          afterLabel:(ctx)=>'Rating: '+BROKERS[ctx.dataIndex].rating+' | Date: '+BROKERS[ctx.dataIndex].date,
+        }
+      },
+      annotation:{
+        annotations:{
+          curr:{type:'line',yMin:107.98,yMax:107.98,borderColor:'#e8703c',borderWidth:2,borderDash:[6,4],
+            label:{display:true,content:'Current $107.98',position:'end',backgroundColor:'#e8703c',color:'#fff',font:{size:10}}}
+        }
+      }
+    },
+    scales:{
+      y:{title:{display:true,text:'Price Target ($)'},grid:{color:'rgba(38,50,77,.4)'}},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: BACKLOG MIX DONUT ============= */
+new Chart(document.getElementById('chartBacklogMix'),{
+  type:'doughnut',
+  data:{
+    labels:['MSA Backlog (recurring)','Fixed-price (project)'],
+    datasets:[{
+      data:[7.5, 4.4],
+      backgroundColor:['#4d7ef9','#e8703c'],
+      borderColor:'#0e1322',borderWidth:3,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    cutout:'62%',
+    plugins:{
+      legend:{position:'bottom'},
+      tooltip:{callbacks:{label:(ctx)=>ctx.label+': $'+ctx.parsed+'B'}}
+    }
+  }
+});
+
+/* ============= CHART: REVENUE STACKED ============= */
+new Chart(document.getElementById('chartRevenue'),{
+  type:'bar',
+  data:{
+    labels:ANNUAL.years,
+    datasets:[
+      {label:'Utilities',data:ANNUAL.utilRev,backgroundColor:'#4d7ef9',stack:'a',borderRadius:4},
+      {label:'Energy',data:ANNUAL.energyRev,backgroundColor:'#e8703c',stack:'a',borderRadius:4},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom'},
+      tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': $'+(ctx.parsed.y/1000).toFixed(2)+'B'}}
+    },
+    scales:{
+      y:{stacked:true,title:{display:true,text:'$M'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>'$'+(v/1000).toFixed(1)+'B'}},
+      x:{stacked:true,grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: EBITDA ============= */
+new Chart(document.getElementById('chartEBITDA'),{
+  data:{
+    labels:ANNUAL.years,
+    datasets:[
+      {type:'bar',label:'Adj. EBITDA ($M)',data:ANNUAL.ebitda,backgroundColor:'#3acc8f',borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'EBITDA Margin %',data:ANNUAL.ebitdaMgn,borderColor:'#f5b942',backgroundColor:'#f5b942',
+        tension:0.35,pointRadius:4,pointHoverRadius:6,yAxisID:'y1',borderWidth:2.5},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom'}},
+    scales:{
+      y:{title:{display:true,text:'$M'},grid:{color:'rgba(38,50,77,.4)'}},
+      y1:{position:'right',title:{display:true,text:'%'},grid:{display:false},
+        ticks:{callback:v=>v+'%'},min:0,max:10},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: ENERGY MARGIN QTR ============= */
+new Chart(document.getElementById('chartEnergyMargin'),{
+  type:'line',
+  data:{
+    labels:QUARTERS.labels,
+    datasets:[{
+      label:'Energy GM%',
+      data:QUARTERS.energyGM,
+      borderColor:'#e8703c',
+      backgroundColor:'rgba(232,112,60,.2)',
+      tension:0.35,pointRadius:5,pointHoverRadius:7,fill:true,
+      borderWidth:2.5,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:(ctx)=>'GM%: '+ctx.parsed.y+'%'}}
+    },
+    scales:{
+      y:{title:{display:true,text:'%'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>v+'%'},min:5,max:14},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: UTIL MARGIN QTR ============= */
+new Chart(document.getElementById('chartUtilMargin'),{
+  type:'line',
+  data:{
+    labels:QUARTERS.labels,
+    datasets:[{
+      label:'Utilities GM%',
+      data:QUARTERS.utilGM,
+      borderColor:'#4d7ef9',
+      backgroundColor:'rgba(77,126,249,.2)',
+      tension:0.35,pointRadius:5,pointHoverRadius:7,fill:true,
+      borderWidth:2.5,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:(ctx)=>'GM%: '+ctx.parsed.y+'%'}}
+    },
+    scales:{
+      y:{title:{display:true,text:'%'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>v+'%'},min:5,max:16},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: BACKLOG QUARTERLY ============= */
+new Chart(document.getElementById('chartBacklogQuarterly'),{
+  type:'line',
+  data:{
+    labels:BACKLOG.labels,
+    datasets:[
+      {label:'Energy backlog',data:BACKLOG.energy,borderColor:'#e8703c',backgroundColor:'rgba(232,112,60,.18)',
+        tension:0.3,fill:true,borderWidth:2,pointRadius:0,pointHoverRadius:5},
+      {label:'Utilities backlog',data:BACKLOG.utilities,borderColor:'#4d7ef9',backgroundColor:'rgba(77,126,249,.18)',
+        tension:0.3,fill:true,borderWidth:2,pointRadius:0,pointHoverRadius:5},
+      {label:'Total backlog',data:BACKLOG.total,borderColor:'#3acc8f',backgroundColor:'transparent',
+        tension:0.3,borderWidth:2.5,borderDash:[4,3],pointRadius:0,pointHoverRadius:5},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{position:'bottom'},
+      tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': $'+(ctx.parsed.y/1000).toFixed(2)+'B'}}
+    },
+    scales:{
+      y:{title:{display:true,text:'$M'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>'$'+(v/1000).toFixed(1)+'B'}},
+      x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:14}},
+    }
+  }
+});
+
+/* ============= CHART: BOOK-BILL ============= */
+new Chart(document.getElementById('chartBookBill'),{
+  type:'bar',
+  data:{
+    labels:QUARTERS.labels,
+    datasets:[{
+      label:'Energy book-to-bill',
+      data:QUARTERS.energyBookBill,
+      backgroundColor:QUARTERS.energyBookBill.map(v=>v>=1?'#3acc8f':'#ef4565'),
+      borderRadius:4,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:(ctx)=>'B/B: '+ctx.parsed.y.toFixed(1)+'x'}}
+    },
+    scales:{
+      y:{title:{display:true,text:'Book-to-bill (x)'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>v+'x'}, beginAtZero:true},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: RENEWABLES ============= */
+new Chart(document.getElementById('chartRenewables'),{
+  type:'bar',
+  data:{
+    labels:QUARTERS.labels,
+    datasets:[{
+      label:'Renewables Revenue ($M)',
+      data:QUARTERS.renewablesRev,
+      backgroundColor:'#e8703c',
+      borderRadius:4,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:(ctx)=>'$'+ctx.parsed.y+'M'}}
+    },
+    scales:{
+      y:{title:{display:true,text:'$M'},grid:{color:'rgba(38,50,77,.4)'}},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: GUIDE BRIDGE ============= */
+new Chart(document.getElementById('chartGuideBridge'),{
+  type:'bar',
+  data:{
+    labels:['Old guide\nMidpt','PayneCrest\n+contrib','Q1 cost\noverruns','Solar rev\npushout','Lower\nmargin','New guide\nMidpt'],
+    datasets:[{
+      label:'2026 Adj. EBITDA ($M)',
+      data:[570, 30, -37, -45, -28, 490],
+      backgroundColor:['#4d7ef9','#3acc8f','#ef4565','#ef4565','#ef4565','#f5b942'],
+      borderRadius:4,
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:(ctx)=>'$'+ctx.parsed.x+'M'}}
+    },
+    scales:{
+      x:{title:{display:true,text:'$M'},grid:{color:'rgba(38,50,77,.4)'}},
+      y:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: PEER ============= */
+new Chart(document.getElementById('chartPeer'),{
+  type:'bar',
+  data:{
+    labels:PEERS.labels,
+    datasets:[
+      {label:'2026E',data:PEERS.ev2026,backgroundColor:'#e8703c',borderRadius:4},
+      {label:'2027E',data:PEERS.ev2027,backgroundColor:'#4d7ef9',borderRadius:4},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom'},
+      tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': '+ctx.parsed.y+'x'}}
+    },
+    scales:{
+      y:{title:{display:true,text:'EV / EBITDA (x)'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>v+'x'}},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= CHART: SCATTER ROIC vs EV/EBITDA ============= */
+new Chart(document.getElementById('chartScatter'),{
+  type:'scatter',
+  data:{
+    datasets:[{
+      label:'Specialty E&C peers',
+      data:SCATTER.data.map(d=>({x:d.ebitdaMgn,y:d.evEbitda,company:d.company,roic:d.roic,rev:d.rev})),
+      backgroundColor:SCATTER.data.map(d=>d.company==='PRIM'?'#e8703c':'#4d7ef9'),
+      pointRadius:SCATTER.data.map(d=>Math.sqrt(d.rev)*5),
+      pointHoverRadius:SCATTER.data.map(d=>Math.sqrt(d.rev)*5+2),
+      borderColor:'#fff',borderWidth:2,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label:(ctx)=>[
+            ctx.raw.company,
+            'EBITDA mgn: '+ctx.raw.x+'%',
+            'EV/EBITDA: '+ctx.raw.y+'x',
+            'ROIC: '+ctx.raw.roic+'%',
+            'Revenue: $'+ctx.raw.rev+'B',
+          ]
+        }
+      }
+    },
+    scales:{
+      x:{title:{display:true,text:'EBITDA Margin %'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>v+'%'}},
+      y:{title:{display:true,text:'EV / EBITDA (x)'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>v+'x'}, min:5},
+    }
+  }
+});
+
+/* ============= CHART: CAPEX ============= */
+new Chart(document.getElementById('chartCapex'),{
+  data:{
+    labels:CAPEX.years,
+    datasets:[
+      {type:'bar',label:'Total US Utility Capex ($B)',data:CAPEX.total,
+        backgroundColor:'rgba(77,126,249,.6)',borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Electric Utility ($B)',data:CAPEX.electric,
+        borderColor:'#e8703c',backgroundColor:'#e8703c',tension:.3,
+        pointRadius:4,borderWidth:2.5,yAxisID:'y'},
+      {type:'line',label:'Gas Utility ($B)',data:CAPEX.gas,
+        borderColor:'#3acc8f',backgroundColor:'#3acc8f',tension:.3,
+        pointRadius:4,borderWidth:2.5,yAxisID:'y2'},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom'},
+      tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': $'+ctx.parsed.y.toFixed(1)+'B'}}
+    },
+    scales:{
+      y:{title:{display:true,text:'$B (total / electric)'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>'$'+v+'B'}},
+      y2:{position:'right',title:{display:true,text:'$B (gas)'},grid:{display:false},
+        ticks:{callback:v=>'$'+v+'B'},min:0,max:12},
+      x:{grid:{display:false}},
+    }
+  }
+});
+
+/* ============= US MAP ============= */
+/* Compact US states data with operations footprint */
+const STATES = [
+  /* state, abbreviation, x, y, width, height, presence: hq/energy/util/both/none, brief */
+  ['Texas','TX',445,400,140,90,'hq','HQ Dallas. Oncor (T&D), Premier PV plant, ERCOT transmission, TX DOT heavy civil. Heart of Power Delivery.'],
+  ['California','CA',60,260,90,140,'both','Founding state (ARB Inc 1960, Bakersfield). PG&E utility MSA, Sempra/SoCalGas, utility-scale solar.'],
+  ['Florida','FL',700,460,100,80,'both','Florida Power & Light utility MSA. Solar EPC. Storm restoration optionality.'],
+  ['Louisiana','LA',520,460,80,50,'energy','Heavy civil DOT work. Pipeline corridor. Gulf Coast O&G.'],
+  ['Arizona','AZ',180,330,90,80,'energy','Utility-scale solar projects. Hyperscaler data center buildout corridor.'],
+  ['New Mexico','NM',270,340,90,70,'energy','Solar / pipeline / industrial.'],
+  ['Oklahoma','OK',430,330,90,70,'both','Power delivery, pipeline, solar.'],
+  ['Colorado','CO',290,250,100,80,'both','Garnet Mesa agrivoltaics (102 MWdc). Xcel Energy MSA.'],
+  ['Nevada','NV',130,240,90,90,'energy','Solar / lithium / data centers.'],
+  ['Utah','UT',210,220,80,90,'energy','Solar projects.'],
+  ['Washington','WA',110,80,90,60,'util','Pacific Northwest utility work.'],
+  ['Oregon','OR',80,140,100,70,'util','Pacific Northwest utility work.'],
+  ['Idaho','ID',180,150,80,90,'energy','Renewables.'],
+  ['Montana','MT',230,80,140,70,'util','Power delivery.'],
+  ['Wyoming','WY',280,170,100,70,'energy','Pipeline / O&G.'],
+  ['North Dakota','ND',390,80,80,60,'energy','Pipeline corridor.'],
+  ['South Dakota','SD',390,150,80,60,'util','Power delivery.'],
+  ['Nebraska','NE',390,210,90,50,'util','Power delivery / telecom.'],
+  ['Kansas','KS',390,275,90,55,'util','Power delivery / telecom.'],
+  ['Minnesota','MN',490,90,80,70,'util','Xcel Energy MSA. Telecom.'],
+  ['Iowa','IA',490,170,80,55,'util','Power delivery / telecom.'],
+  ['Missouri','MO',500,255,90,60,'energy','PayneCrest HQ (acquired May 2026). Industrial / data centers.'],
+  ['Arkansas','AR',490,330,80,55,'energy','Solar / industrial.'],
+  ['Wisconsin','WI',570,110,70,70,'util','Power delivery / telecom.'],
+  ['Illinois','IL',580,200,70,90,'util','Power delivery, telecom (Comm).'],
+  ['Indiana','IN',640,200,55,80,'energy','Solar (problem geography — drain tile issues).'],
+  ['Michigan','MI',640,110,70,90,'util','Consumers Energy MSA. Power delivery.'],
+  ['Ohio','OH',680,190,65,55,'util','Power delivery / electric T&D.'],
+  ['Kentucky','KY',640,265,90,40,'util','Power delivery.'],
+  ['Tennessee','TN',610,300,110,40,'util','Power delivery.'],
+  ['Mississippi','MS',550,375,55,80,'energy','Solar / industrial.'],
+  ['Alabama','AL',610,375,60,80,'energy','Solar / industrial.'],
+  ['Georgia','GA',665,360,65,90,'energy','Solar / industrial / data center corridor.'],
+  ['South Carolina','SC',730,340,55,55,'util','Duke Energy MSA. Power delivery.'],
+  ['North Carolina','NC',720,290,90,50,'util','Duke Energy MSA. Power delivery.'],
+  ['Virginia','VA',745,250,80,50,'util','Dominion MSA. Data center alley (NoVA).'],
+  ['West Virginia','WV',715,235,55,40,'energy','Pipeline / industrial.'],
+  ['Pennsylvania','PA',745,180,90,50,'energy','PJM / pipeline / gas-gen.'],
+  ['New York','NY',785,130,80,55,'util','Power delivery.'],
+  ['New Jersey','NJ',840,180,30,40,'energy','Industrial / pipeline.'],
+  ['Maryland','MD',830,225,40,25,'util','Power delivery.'],
+  ['Delaware','DE',855,220,15,20,'util','Power delivery.'],
+  ['Connecticut','CT',870,150,30,20,'util','Power delivery.'],
+  ['Massachusetts','MA',865,125,45,25,'util','Power delivery.'],
+  ['Maine','ME',870,80,40,50,'util','Renewables / storm.'],
+  ['New Hampshire','NH',870,105,18,30,'util','Renewables / storm.'],
+  ['Vermont','VT',850,105,18,30,'util','Renewables / storm.'],
+  ['Rhode Island','RI',900,150,12,15,'util','Power delivery.'],
+];
+
+/* render */
+const svg = document.getElementById('usMap');
+const tip = document.getElementById('mapTip');
+const presenceClass = {hq:'headquarters', energy:'active-energy', util:'active-util', both:'active-both', none:''};
+STATES.forEach(s=>{
+  const [name,abbr,x,y,w,h,presence,note] = s;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x',x);rect.setAttribute('y',y);
+  rect.setAttribute('width',w);rect.setAttribute('height',h);
+  rect.setAttribute('rx',4);
+  rect.setAttribute('class','state '+presenceClass[presence]);
+  rect.setAttribute('data-state',name);
+  rect.setAttribute('data-presence',presence);
+  rect.setAttribute('data-note',note);
+  g.appendChild(rect);
+  const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+  lbl.setAttribute('x',x+w/2);lbl.setAttribute('y',y+h/2+3);
+  lbl.setAttribute('text-anchor','middle');lbl.setAttribute('class','label');
+  lbl.textContent=abbr;
+  g.appendChild(lbl);
+  svg.appendChild(g);
+
+  rect.addEventListener('mouseenter',(e)=>{
+    tip.innerHTML=`<h5>${name}${presence==='hq'?' ⭐ HQ':''}</h5><p>${note}</p>`;
+    tip.style.opacity=1;
+  });
+  rect.addEventListener('mousemove',(e)=>{
+    const r = svg.getBoundingClientRect();
+    const wrap = svg.parentElement.getBoundingClientRect();
+    tip.style.left=(e.clientX - wrap.left + 12)+'px';
+    tip.style.top=(e.clientY - wrap.top + 12)+'px';
+  });
+  rect.addEventListener('mouseleave',()=>{tip.style.opacity=0});
+});
+
+/* Pills filtering */
+function filterMap(mode){
+  document.querySelectorAll('.us-map .state').forEach(s=>{
+    const presence = s.getAttribute('data-presence');
+    s.style.opacity = '1';
+    if(mode==='energy' && !(presence==='energy'||presence==='both'||presence==='hq')) s.style.opacity = '.25';
+    if(mode==='util' && !(presence==='util'||presence==='both'||presence==='hq')) s.style.opacity = '.25';
+  });
+  document.querySelectorAll('#footprint .pill').forEach(p=>p.classList.remove('active'));
+  document.getElementById('map-'+mode).classList.add('active');
+}
+document.getElementById('map-all').onclick = ()=>filterMap('all');
+document.getElementById('map-energy').onclick = ()=>filterMap('energy');
+document.getElementById('map-util').onclick = ()=>filterMap('util');
+
+</script>
+</body>
+</html>
