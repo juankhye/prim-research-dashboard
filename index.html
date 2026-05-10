@@ -237,32 +237,76 @@ section{
 .debate-list li strong{color:var(--text);display:block;margin-bottom:2px}
 .debate-list li span{color:var(--text-2)}
 
-/* Map */
+/* Map — tile-grid US map (NYT/538 style) */
 .map-wrap{
   background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;
   position:relative;
 }
-.us-map{width:100%;max-width:920px;margin:0 auto;display:block}
-.us-map .state{
-  fill:var(--surface-2);stroke:var(--border-strong);stroke-width:.7;
-  transition:.15s;cursor:pointer;
+.tile-map{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:5px;
+  max-width:780px;
+  margin:14px auto 0;
+  padding:8px;
 }
-.us-map .state:hover{fill:var(--surface-3);stroke:var(--text-2)}
-.us-map .state.active-energy{fill:rgba(232,112,60,.45);stroke:var(--energy)}
-.us-map .state.active-util{fill:rgba(77,126,249,.45);stroke:var(--util)}
-.us-map .state.active-both{fill:rgba(180,140,90,.55);stroke:var(--warn)}
-.us-map .state.headquarters{fill:rgba(245,185,66,.55);stroke:var(--warn);stroke-width:1.4}
-.us-map .label{fill:var(--text-2);font-size:9px;font-weight:600;pointer-events:none;font-family:'JetBrains Mono'}
-.map-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid var(--border)}
+.state-tile{
+  aspect-ratio:1/1;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono';font-size:11px;font-weight:700;
+  color:var(--text-3);
+  cursor:pointer;
+  transition:.18s ease;
+  position:relative;
+  user-select:none;
+}
+.state-tile:hover{
+  transform:scale(1.08);
+  z-index:5;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+.state-tile.active-energy{
+  background:linear-gradient(135deg,rgba(232,112,60,.55),rgba(232,112,60,.35));
+  border-color:var(--energy);color:#fff;
+}
+.state-tile.active-util{
+  background:linear-gradient(135deg,rgba(77,126,249,.55),rgba(77,126,249,.35));
+  border-color:var(--util);color:#fff;
+}
+.state-tile.active-both{
+  background:linear-gradient(135deg,rgba(232,112,60,.45),rgba(77,126,249,.45));
+  border-color:var(--warn);color:#fff;
+}
+.state-tile.headquarters{
+  background:linear-gradient(135deg,#f5b942,#e8703c);
+  border-color:#fff;border-width:2px;color:#fff;
+  box-shadow:0 0 0 2px rgba(245,185,66,.3),0 0 18px rgba(245,185,66,.5);
+  font-weight:800;
+}
+.state-tile.headquarters::after{
+  content:'★';position:absolute;top:-6px;right:-4px;font-size:11px;color:#f5b942;
+  text-shadow:0 0 4px rgba(0,0,0,.6);
+}
+.state-tile.dim{opacity:.18}
+.map-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);justify-content:center}
 .map-legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)}
 .map-legend-item .swatch{width:14px;height:14px;border-radius:3px;border:1px solid var(--border-strong)}
 .map-tooltip{
   position:absolute;background:var(--bg);border:1px solid var(--border-strong);
-  padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;
-  opacity:0;transition:.15s;z-index:10;max-width:260px;box-shadow:var(--shadow);
+  padding:12px 14px;border-radius:8px;font-size:12px;pointer-events:none;
+  opacity:0;transition:.15s;z-index:100;max-width:280px;box-shadow:var(--shadow);
+  transform:translateY(-2px);
 }
-.map-tooltip h5{font-size:13px;margin-bottom:4px;color:var(--energy)}
-.map-tooltip p{color:var(--text-2);font-size:11px;line-height:1.4}
+.map-tooltip.show{opacity:1}
+.map-tooltip h5{font-size:13px;margin-bottom:6px;color:var(--energy);display:flex;align-items:center;gap:6px}
+.map-tooltip h5 .badge{
+  font-size:9px;text-transform:uppercase;background:var(--surface-3);
+  padding:2px 6px;border-radius:99px;color:var(--text-2);font-weight:600;
+}
+.map-tooltip p{color:var(--text-2);font-size:11px;line-height:1.5}
 
 /* Driver bars */
 .driver-list{display:flex;flex-direction:column;gap:12px}
@@ -742,15 +786,15 @@ footer .src{margin-top:14px;font-size:11px;color:var(--text-3)}
         <span class="pill" id="map-util">Utilities focus</span>
       </div>
     </div>
-    <svg class="us-map" viewBox="0 0 950 600" xmlns="http://www.w3.org/2000/svg" id="usMap"></svg>
+    <div class="tile-map" id="tileMap"></div>
     <div class="map-tooltip" id="mapTip"></div>
     <div class="map-legend">
-      <div class="map-legend-item"><span class="swatch" style="background:rgba(245,185,66,.55);border-color:#f5b942"></span>HQ &amp; primary operations (Dallas, TX)</div>
-      <div class="map-legend-item"><span class="swatch" style="background:rgba(232,112,60,.45);border-color:#e8703c"></span>Energy / Solar / Pipeline / Civil</div>
-      <div class="map-legend-item"><span class="swatch" style="background:rgba(77,126,249,.45);border-color:#4d7ef9"></span>Utilities (T&amp;D, gas, telecom)</div>
-      <div class="map-legend-item"><span class="swatch" style="background:rgba(180,140,90,.55);border-color:#f5b942"></span>Both segments active</div>
-      <div class="map-legend-item"><span class="swatch" style="background:#1a2238;border-color:#34416a"></span>No active operations</div>
+      <div class="map-legend-item"><span class="swatch" style="background:linear-gradient(135deg,#f5b942,#e8703c);border-color:#fff"></span>HQ ★ Dallas, TX</div>
+      <div class="map-legend-item"><span class="swatch" style="background:rgba(232,112,60,.5);border-color:#e8703c"></span>Energy focus (solar, pipeline, gas-gen)</div>
+      <div class="map-legend-item"><span class="swatch" style="background:rgba(77,126,249,.5);border-color:#4d7ef9"></span>Utilities focus (T&amp;D, gas, telecom)</div>
+      <div class="map-legend-item"><span class="swatch" style="background:linear-gradient(135deg,rgba(232,112,60,.45),rgba(77,126,249,.45));border-color:#f5b942"></span>Both segments active</div>
     </div>
+    <p style="text-align:center;font-size:11px;color:var(--text-3);margin-top:14px">Tile-grid US map (NYT/538 style) — each square = one state in approximate geographic position. Hover any state for the operational footprint.</p>
   </div>
 
   <div class="grid-3" style="margin-top:24px">
@@ -1931,103 +1975,121 @@ new Chart(document.getElementById('chartCapex'),{
   }
 });
 
-/* ============= US MAP ============= */
-/* Compact US states data with operations footprint */
+/* ============= US TILE-GRID MAP ============= */
+/* Each state: [name, abbr, col(1-12), row(1-8), presence, note]
+   presence: hq | energy | util | both
+   Layout follows NYT/538 tile-grid convention. */
 const STATES = [
-  /* state, abbreviation, x, y, width, height, presence: hq/energy/util/both/none, brief */
-  ['Texas','TX',445,400,140,90,'hq','HQ Dallas. Oncor (T&D), Premier PV plant, ERCOT transmission, TX DOT heavy civil. Heart of Power Delivery.'],
-  ['California','CA',60,260,90,140,'both','Founding state (ARB Inc 1960, Bakersfield). PG&E utility MSA, Sempra/SoCalGas, utility-scale solar.'],
-  ['Florida','FL',700,460,100,80,'both','Florida Power & Light utility MSA. Solar EPC. Storm restoration optionality.'],
-  ['Louisiana','LA',520,460,80,50,'energy','Heavy civil DOT work. Pipeline corridor. Gulf Coast O&G.'],
-  ['Arizona','AZ',180,330,90,80,'energy','Utility-scale solar projects. Hyperscaler data center buildout corridor.'],
-  ['New Mexico','NM',270,340,90,70,'energy','Solar / pipeline / industrial.'],
-  ['Oklahoma','OK',430,330,90,70,'both','Power delivery, pipeline, solar.'],
-  ['Colorado','CO',290,250,100,80,'both','Garnet Mesa agrivoltaics (102 MWdc). Xcel Energy MSA.'],
-  ['Nevada','NV',130,240,90,90,'energy','Solar / lithium / data centers.'],
-  ['Utah','UT',210,220,80,90,'energy','Solar projects.'],
-  ['Washington','WA',110,80,90,60,'util','Pacific Northwest utility work.'],
-  ['Oregon','OR',80,140,100,70,'util','Pacific Northwest utility work.'],
-  ['Idaho','ID',180,150,80,90,'energy','Renewables.'],
-  ['Montana','MT',230,80,140,70,'util','Power delivery.'],
-  ['Wyoming','WY',280,170,100,70,'energy','Pipeline / O&G.'],
-  ['North Dakota','ND',390,80,80,60,'energy','Pipeline corridor.'],
-  ['South Dakota','SD',390,150,80,60,'util','Power delivery.'],
-  ['Nebraska','NE',390,210,90,50,'util','Power delivery / telecom.'],
-  ['Kansas','KS',390,275,90,55,'util','Power delivery / telecom.'],
-  ['Minnesota','MN',490,90,80,70,'util','Xcel Energy MSA. Telecom.'],
-  ['Iowa','IA',490,170,80,55,'util','Power delivery / telecom.'],
-  ['Missouri','MO',500,255,90,60,'energy','PayneCrest HQ (acquired May 2026). Industrial / data centers.'],
-  ['Arkansas','AR',490,330,80,55,'energy','Solar / industrial.'],
-  ['Wisconsin','WI',570,110,70,70,'util','Power delivery / telecom.'],
-  ['Illinois','IL',580,200,70,90,'util','Power delivery, telecom (Comm).'],
-  ['Indiana','IN',640,200,55,80,'energy','Solar (problem geography — drain tile issues).'],
-  ['Michigan','MI',640,110,70,90,'util','Consumers Energy MSA. Power delivery.'],
-  ['Ohio','OH',680,190,65,55,'util','Power delivery / electric T&D.'],
-  ['Kentucky','KY',640,265,90,40,'util','Power delivery.'],
-  ['Tennessee','TN',610,300,110,40,'util','Power delivery.'],
-  ['Mississippi','MS',550,375,55,80,'energy','Solar / industrial.'],
-  ['Alabama','AL',610,375,60,80,'energy','Solar / industrial.'],
-  ['Georgia','GA',665,360,65,90,'energy','Solar / industrial / data center corridor.'],
-  ['South Carolina','SC',730,340,55,55,'util','Duke Energy MSA. Power delivery.'],
-  ['North Carolina','NC',720,290,90,50,'util','Duke Energy MSA. Power delivery.'],
-  ['Virginia','VA',745,250,80,50,'util','Dominion MSA. Data center alley (NoVA).'],
-  ['West Virginia','WV',715,235,55,40,'energy','Pipeline / industrial.'],
-  ['Pennsylvania','PA',745,180,90,50,'energy','PJM / pipeline / gas-gen.'],
-  ['New York','NY',785,130,80,55,'util','Power delivery.'],
-  ['New Jersey','NJ',840,180,30,40,'energy','Industrial / pipeline.'],
-  ['Maryland','MD',830,225,40,25,'util','Power delivery.'],
-  ['Delaware','DE',855,220,15,20,'util','Power delivery.'],
-  ['Connecticut','CT',870,150,30,20,'util','Power delivery.'],
-  ['Massachusetts','MA',865,125,45,25,'util','Power delivery.'],
-  ['Maine','ME',870,80,40,50,'util','Renewables / storm.'],
-  ['New Hampshire','NH',870,105,18,30,'util','Renewables / storm.'],
-  ['Vermont','VT',850,105,18,30,'util','Renewables / storm.'],
-  ['Rhode Island','RI',900,150,12,15,'util','Power delivery.'],
+  /* Row 1 */
+  ['Maine','ME',12,1,'util','Renewables and storm restoration optionality.'],
+  /* Row 2 */
+  ['Vermont','VT',10,2,'util','Power delivery / renewables.'],
+  ['New Hampshire','NH',11,2,'util','Power delivery / renewables.'],
+  /* Row 3 */
+  ['Washington','WA',2,3,'util','Pacific Northwest utility work.'],
+  ['Montana','MT',5,3,'util','Power delivery.'],
+  ['North Dakota','ND',6,3,'energy','Pipeline corridor.'],
+  ['Minnesota','MN',7,3,'util','Xcel Energy MSA. Telecom / fiber.'],
+  ['Wisconsin','WI',8,3,'util','Power delivery / telecom.'],
+  ['Michigan','MI',9,3,'util','Consumers Energy MSA. Power delivery.'],
+  ['New York','NY',11,3,'util','Power delivery, transmission upgrades.'],
+  ['Massachusetts','MA',12,3,'util','Power delivery / renewables.'],
+  /* Row 4 */
+  ['Oregon','OR',2,4,'util','Pacific Northwest utility work.'],
+  ['Idaho','ID',3,4,'energy','Renewables.'],
+  ['Wyoming','WY',4,4,'energy','Pipeline / O&G.'],
+  ['South Dakota','SD',5,4,'util','Power delivery.'],
+  ['Iowa','IA',6,4,'util','Power delivery / telecom.'],
+  ['Illinois','IL',7,4,'util','Power delivery, telecom (Comm).'],
+  ['Indiana','IN',8,4,'energy','Solar — flagged "problem geography" per Q1 2026 (agricultural drain-tile / subsurface issues caused 6-project margin collapse).'],
+  ['Ohio','OH',9,4,'util','Power delivery / electric T&D.'],
+  ['Pennsylvania','PA',10,4,'energy','PJM region — pipeline / gas-gen.'],
+  ['New Jersey','NJ',11,4,'energy','Industrial / pipeline.'],
+  ['Connecticut','CT',12,4,'util','Power delivery.'],
+  /* Row 5 */
+  ['California','CA',2,5,'both','Founding state (ARB Inc, Bakersfield 1960). PG&E utility MSA, Sempra / SoCalGas, utility-scale solar.'],
+  ['Nevada','NV',3,5,'energy','Solar / lithium / data center corridor.'],
+  ['Utah','UT',4,5,'energy','Solar projects.'],
+  ['Colorado','CO',5,5,'both','Garnet Mesa agrivoltaics (102 MWdc, 176K panels). Xcel Energy MSA.'],
+  ['Nebraska','NE',6,5,'util','Power delivery / telecom.'],
+  ['Missouri','MO',7,5,'energy','PayneCrest HQ — acquired May 2026 ($399.5M). Data center electrical work.'],
+  ['Kentucky','KY',8,5,'util','Power delivery.'],
+  ['West Virginia','WV',9,5,'energy','Pipeline / industrial.'],
+  ['Virginia','VA',10,5,'util','Dominion MSA. Data center alley (Northern VA — largest hyperscaler cluster in the US).'],
+  ['Maryland','MD',11,5,'util','Power delivery.'],
+  ['Rhode Island','RI',12,5,'util','Power delivery.'],
+  /* Row 6 */
+  ['Arizona','AZ',3,6,'energy','Utility-scale solar. Hyperscaler data center buildout corridor.'],
+  ['New Mexico','NM',4,6,'energy','Solar / pipeline / industrial.'],
+  ['Kansas','KS',6,6,'util','Power delivery / telecom.'],
+  ['Arkansas','AR',7,6,'energy','Solar / industrial.'],
+  ['Tennessee','TN',8,6,'util','Power delivery.'],
+  ['North Carolina','NC',9,6,'util','Duke Energy MSA. Power delivery.'],
+  ['South Carolina','SC',10,6,'util','Duke Energy MSA. Power delivery.'],
+  ['DC','DC',11,6,'util','Federal-adjacent power delivery.'],
+  ['Delaware','DE',12,6,'util','Power delivery.'],
+  /* Row 7 */
+  ['Alaska','AK',1,7,'util','Limited operations.'],
+  ['Hawaii','HI',2,7,'util','Limited operations.'],
+  ['Oklahoma','OK',5,7,'both','Power delivery, pipeline, solar.'],
+  ['Louisiana','LA',6,7,'energy','Heavy civil DOT work (Louisiana DOT). Pipeline corridor. Gulf Coast O&G.'],
+  ['Mississippi','MS',7,7,'energy','Solar / industrial.'],
+  ['Alabama','AL',8,7,'energy','Solar / industrial.'],
+  ['Georgia','GA',9,7,'energy','Solar / industrial / data center corridor.'],
+  /* Row 8 */
+  ['Texas','TX',5,8,'hq','★ HQ Dallas (2300 N. Field St). Premier PV eBOS plant in Dallas-Fort Worth (1.5GW→4.5GW capacity by late 2026). Decade-long Oncor T&D MSA. ERCOT-led transmission super-cycle. TX DOT heavy civil. Single biggest market for Power Delivery.'],
+  ['Florida','FL',10,8,'both','Florida Power & Light utility MSA. Solar EPC. Storm restoration optionality.'],
 ];
 
-/* render */
-const svg = document.getElementById('usMap');
+/* render tile grid */
+const tileMap = document.getElementById('tileMap');
 const tip = document.getElementById('mapTip');
-const presenceClass = {hq:'headquarters', energy:'active-energy', util:'active-util', both:'active-both', none:''};
+const presenceLabel = {
+  hq:'HQ',
+  energy:'Energy',
+  util:'Utilities',
+  both:'Both segments'
+};
+const presenceClass = {
+  hq:'headquarters',
+  energy:'active-energy',
+  util:'active-util',
+  both:'active-both'
+};
 STATES.forEach(s=>{
-  const [name,abbr,x,y,w,h,presence,note] = s;
-  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-  rect.setAttribute('x',x);rect.setAttribute('y',y);
-  rect.setAttribute('width',w);rect.setAttribute('height',h);
-  rect.setAttribute('rx',4);
-  rect.setAttribute('class','state '+presenceClass[presence]);
-  rect.setAttribute('data-state',name);
-  rect.setAttribute('data-presence',presence);
-  rect.setAttribute('data-note',note);
-  g.appendChild(rect);
-  const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
-  lbl.setAttribute('x',x+w/2);lbl.setAttribute('y',y+h/2+3);
-  lbl.setAttribute('text-anchor','middle');lbl.setAttribute('class','label');
-  lbl.textContent=abbr;
-  g.appendChild(lbl);
-  svg.appendChild(g);
+  const [name,abbr,col,row,presence,note] = s;
+  const tile = document.createElement('div');
+  tile.className = 'state-tile '+presenceClass[presence];
+  tile.style.gridColumn = col;
+  tile.style.gridRow = row;
+  tile.dataset.state = name;
+  tile.dataset.presence = presence;
+  tile.dataset.note = note;
+  tile.textContent = abbr;
+  tileMap.appendChild(tile);
 
-  rect.addEventListener('mouseenter',(e)=>{
-    tip.innerHTML=`<h5>${name}${presence==='hq'?' ⭐ HQ':''}</h5><p>${note}</p>`;
-    tip.style.opacity=1;
+  tile.addEventListener('mouseenter',()=>{
+    tip.innerHTML = `<h5>${name}<span class="badge">${presenceLabel[presence]}</span></h5><p>${note}</p>`;
+    tip.classList.add('show');
   });
-  rect.addEventListener('mousemove',(e)=>{
-    const r = svg.getBoundingClientRect();
-    const wrap = svg.parentElement.getBoundingClientRect();
-    tip.style.left=(e.clientX - wrap.left + 12)+'px';
-    tip.style.top=(e.clientY - wrap.top + 12)+'px';
+  tile.addEventListener('mousemove',(e)=>{
+    const wrap = tileMap.parentElement.getBoundingClientRect();
+    let x = e.clientX - wrap.left + 14;
+    let y = e.clientY - wrap.top + 14;
+    if(x + 280 > wrap.width) x = e.clientX - wrap.left - 280;
+    tip.style.left = x+'px';
+    tip.style.top = y+'px';
   });
-  rect.addEventListener('mouseleave',()=>{tip.style.opacity=0});
+  tile.addEventListener('mouseleave',()=>{tip.classList.remove('show')});
 });
 
 /* Pills filtering */
 function filterMap(mode){
-  document.querySelectorAll('.us-map .state').forEach(s=>{
-    const presence = s.getAttribute('data-presence');
-    s.style.opacity = '1';
-    if(mode==='energy' && !(presence==='energy'||presence==='both'||presence==='hq')) s.style.opacity = '.25';
-    if(mode==='util' && !(presence==='util'||presence==='both'||presence==='hq')) s.style.opacity = '.25';
+  document.querySelectorAll('.state-tile').forEach(s=>{
+    const presence = s.dataset.presence;
+    s.classList.remove('dim');
+    if(mode==='energy' && !(presence==='energy'||presence==='both'||presence==='hq')) s.classList.add('dim');
+    if(mode==='util' && !(presence==='util'||presence==='both'||presence==='hq')) s.classList.add('dim');
   });
   document.querySelectorAll('#footprint .pill').forEach(p=>p.classList.remove('active'));
   document.getElementById('map-'+mode).classList.add('active');
