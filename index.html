@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <style>
 :root{
   --bg:#080b14;
@@ -436,6 +437,62 @@ section{
 .risk-meter span.on{background:var(--bear)}
 .risk-card p{font-size:13px;color:var(--text-2);line-height:1.55}
 
+/* ===== "Is Solar Contained?" section ===== */
+.verdict-banner{
+  background:linear-gradient(135deg,var(--surface),var(--bg-2));
+  border:1px solid var(--border-strong);border-left:4px solid var(--warn);
+  border-radius:14px;padding:24px 28px;margin-bottom:28px;
+}
+.verdict-banner .vtag{
+  display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--warn);background:var(--warn-soft);padding:4px 12px;border-radius:99px;margin-bottom:12px;
+}
+.verdict-banner h3{font-size:21px;margin-bottom:10px;line-height:1.3}
+.verdict-banner p{font-size:14px;color:var(--text-2);line-height:1.7}
+.verdict-banner .conf{
+  display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-size:12px;
+  font-family:'JetBrains Mono';color:var(--text-3);
+}
+.verdict-banner .conf b{color:var(--bull)}
+
+.hypo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:8px}
+.hypo-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;
+  border-top:3px solid var(--text-3);position:relative;
+}
+.hypo-card.h1{border-top-color:var(--bull)}
+.hypo-card.h2{border-top-color:var(--warn)}
+.hypo-card.h3{border-top-color:var(--bear)}
+.hypo-card .hlabel{font-family:'JetBrains Mono';font-size:12px;color:var(--text-3);margin-bottom:4px}
+.hypo-card h5{font-size:16px;margin-bottom:6px}
+.hypo-card .desc{font-size:12px;color:var(--text-3);line-height:1.5;margin-bottom:12px;min-height:48px}
+.hypo-card .vbadge{
+  display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;margin-bottom:12px;
+}
+.vbadge.confirmed{background:var(--bull-soft);color:var(--bull)}
+.vbadge.partial{background:var(--warn-soft);color:var(--warn)}
+.vbadge.live{background:var(--bear-soft);color:var(--bear)}
+.hypo-card ul{list-style:none;font-size:12px}
+.hypo-card ul li{padding:5px 0;color:var(--text-2);line-height:1.45;display:flex;gap:7px}
+.hypo-card ul li::before{content:'';flex-shrink:0;width:5px;height:5px;border-radius:50%;background:var(--text-3);margin-top:6px}
+.hypo-card ul li.pro::before{background:var(--bull)}
+.hypo-card ul li.con::before{background:var(--bear)}
+
+.score-tbl td .thresh{font-size:11px;color:var(--text-3);display:block;margin-top:2px}
+.badge-when{font-family:'JetBrains Mono';font-size:11px;padding:3px 8px;border-radius:5px;background:var(--surface-3);color:var(--text-2);white-space:nowrap}
+.dot-status{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot-status.pending{background:var(--warn)}
+.dot-status.bad{background:var(--bear)}
+.dot-status.good{background:var(--bull)}
+
+.verify-box{
+  background:var(--bear-soft);border:1px solid rgba(239,69,101,.3);border-radius:12px;padding:18px 22px;margin-top:20px;
+}
+.verify-box h4{color:var(--bear);font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.verify-box ul{list-style:none;font-size:13px}
+.verify-box ul li{padding:6px 0;color:var(--text-2);line-height:1.5;padding-left:20px;position:relative}
+.verify-box ul li::before{content:'⚠';position:absolute;left:0;color:var(--bear);font-size:11px}
+
 /* Footer */
 footer{
   border-top:1px solid var(--border);padding:36px 28px;margin-top:40px;
@@ -507,6 +564,7 @@ footer .src{margin-top:14px;font-size:11px;color:var(--text-3)}
       <a href="#financials">Financials</a>
       <a href="#backlog">Backlog</a>
       <a href="#q1">Q1 Disaster</a>
+      <a href="#contained">Solar: Contained?</a>
       <a href="#mega">End Markets</a>
       <a href="#paynecrest">PayneCrest</a>
       <a href="#valuation">Valuation</a>
@@ -1062,6 +1120,206 @@ footer .src{margin-top:14px;font-size:11px;color:var(--text-3)}
         <div style="font-size:18px;font-weight:700;margin-bottom:4px">1 of 6 projects</div>
         <div style="font-size:12px;color:var(--text-2)">Final problem project closes by year-end. By Jefferies' framework this should mark the end of solar margin pressure — IF management is right.</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= IS SOLAR CONTAINED? ============= -->
+<section id="contained">
+  <div class="section-head">
+    <div class="eyebrow">The thesis-critical question</div>
+    <h2>Is the solar problem contained — or does it repeat?</h2>
+    <p class="lede">
+      This is the entire debate. If the margin reset is structural, Goldman's right and it's a value trap. If it's a contained vintage, the dip is overdone. We ran a forensic AlphaSense sweep across all management commentary, expert-network calls, and sell-side notes. The answer is more precise than "yes" or "no" — and it survives the hardest pushback.
+    </p>
+  </div>
+
+  <div class="verdict-banner">
+    <span class="vtag">Synthesized verdict</span>
+    <h3>PRIM-specific execution failure — but the financial damage is ring-fenced and ~90% burned through.</h3>
+    <p>
+      The peer cross-check is decisive: in the <em>exact same quarter</em>, Quanta (EPS +51% YoY, margin 12.4%→14.1%), SOLV Energy (gross margin +500bps to 18.4%), and MasTec's clean-energy segment all <strong>expanded</strong> margins. PRIM's Energy margin <strong>fell</strong> 9.4%→7.6%. So this was <strong>not</strong> industry bad luck — solar EPC is executable, and PRIM was the outlier. That indicts management/process, exactly as the bears argue. <strong>But</strong> three facts ring-fence it: the troubled cohort was all booked 2H24, the regional head who underwrote them was fired in late 2024, and only <strong>2 of 20 current active projects are 2024-vintage</strong> — the contaminated book is nearly gone. PRIM is now adopting the same LNTP / two-phase contracting the best operators use. The one genuine open risk is the <strong>1H25 bid cohort</strong>, underwritten in the transition window before new controls were fully live.
+    </p>
+    <div class="conf">Confidence: <b>Moderate-High</b> the $110M reset captures the financial downside &nbsp;•&nbsp; <b style="color:var(--warn)">Moderate</b> the estimating/org deficit is fully repaired for safe 2027 re-acceleration</div>
+  </div>
+
+  <!-- THE PEER CHART -->
+  <div class="card">
+    <div class="chart-meta">
+      <h4><span class="icon-dot bear"></span>The killer chart — everyone else's margins went UP; PRIM's went DOWN</h4>
+      <span style="font-size:12px;color:var(--text-3)">Q1 2026 margin change vs prior period — Source: KeyBanc, Evercore, Canalyst, company filings</span>
+    </div>
+    <div class="chart-box"><canvas id="chartPeerMargin"></canvas></div>
+    <p style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.5">
+      Margin change in percentage points (PRIM, PWR Q1'24→Q1'26 gross margin; SOLV YoY gross margin; MTZ Clean-Energy segment EBITDA-margin YoY). Bases differ in level, but the <strong>direction is the point</strong>: every scaled peer expanded; PRIM alone contracted. Wolfe (Apr 9): <em>"MWH [SOLV], a scaled solar EPC with low-teens EBITDA margins, +200bps above PRIM, just goes to show strong margins are achievable in the sector."</em> Translation: the problem was PRIM, not solar.
+    </p>
+  </div>
+
+  <!-- THREE HYPOTHESES SCORECARD -->
+  <h4 style="font-size:16px;margin:30px 0 14px"><span class="icon-dot warn"></span>The three competing hypotheses — scored against the evidence</h4>
+  <div class="hypo-grid">
+    <div class="hypo-card h1">
+      <div class="hlabel">H1 — Bull</div>
+      <h5>Bad vintage</h5>
+      <div class="desc">A specific 2H24 cohort, mis-bid in new geographies. Ring-fenced, runs off by Q4'26.</div>
+      <span class="vbadge confirmed">✓ Strongly confirmed</span>
+      <ul>
+        <li class="pro">6 projects = 4 programs / 3 customers, all booked 2H24 (Midwest, NE, CA)</li>
+        <li class="pro">Only 2 of 20 active projects are 2024-vintage — ~90% burned through</li>
+        <li class="pro">Regional head who underwrote them fired late 2024; no new bids in those geos since 2H24</li>
+        <li class="pro">Even bears agree the $110M reset captures the financial hole</li>
+      </ul>
+    </div>
+    <div class="hypo-card h2">
+      <div class="hlabel">H2 — Bear</div>
+      <h5>Broken process</h5>
+      <div class="desc">The estimating / pre-construction function didn't scale. New work under the same process keeps surprising.</div>
+      <span class="vbadge partial">◐ Was the cause — fix unproven</span>
+      <ul>
+        <li class="con">Peers prove solar is executable → this was PRIM's process, not bad luck</li>
+        <li class="con">2nd consecutive quarter of surprises (Q4 soil → Q1 six projects); KeyBanc: inventory "keeps expanding"</li>
+        <li class="pro">New digital risk tools + 2-phase (LNTP-style) contracting deployed 2025</li>
+        <li class="con">1H25 cohort may have been bid before controls were fully live (the open gap)</li>
+      </ul>
+    </div>
+    <div class="hypo-card h3">
+      <div class="hlabel">H3 — Deep bear</div>
+      <h5>Org / talent erosion</h5>
+      <div class="desc">Talent leakage degrades execution capability everywhere — not fixable by avoiding Indiana.</div>
+      <span class="vbadge live">● Live tail risk</span>
+      <ul>
+        <li class="con">Ferreira VP: "companies can only execute with the people they have… now you can't"</li>
+        <li class="con">Departing managers reportedly recruit 60–100 craft laborers each to competitors</li>
+        <li class="pro">PRIM added ~2,800 employees in 2025 to bolster self-perform labor &amp; estimating</li>
+        <li class="pro">Dycom expert: PRIM's scale means established frontline leaders "will do fine"</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CONTROL CHANGES + CREDIBILITY -->
+  <div class="grid-2" style="margin-top:24px">
+    <div class="card">
+      <h4><span class="icon-dot bull"></span>What management actually changed</h4>
+      <div style="overflow-x:auto;margin-top:8px">
+        <table class="tbl">
+          <thead><tr><th>Control change</th><th>Effective</th><th>Covers</th></tr></thead>
+          <tbody>
+            <tr><td>Halt new bids in problem geos (MW, NE, CA)</td><td class="num">2H24</td><td>2025+ bids</td></tr>
+            <tr><td>2-phase contracts (reimbursable→fixed, LNTP-style)</td><td class="num">Early '25</td><td>2025+ bids</td></tr>
+            <tr><td>Fired regional head who underwrote troubled projects</td><td class="num">Late '24</td><td>Accountability</td></tr>
+            <tr><td>New digital risk-mgmt &amp; scheduling tools</td><td class="num">FY25</td><td>2025+ bids</td></tr>
+            <tr><td>Hired ~2,800 staff (self-perform + estimating)</td><td class="num">FY25</td><td>Execution capacity</td></tr>
+            <tr><td>Full renewables portfolio "risk re-assessment"</td><td class="num">Q1'26</td><td>2026+ book</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:var(--text-3);margin-top:10px">Gap: no disclosed dollar-threshold bid-approval matrix tied to the CEO; unclear if incentive comp now rewards execution quality over bookings volume (KeyBanc flag).</p>
+    </div>
+    <div class="card">
+      <h4><span class="icon-dot bear"></span>Management credibility — the Feb→May collapse</h4>
+      <div style="overflow-x:auto;margin-top:8px">
+        <table class="tbl">
+          <thead><tr><th>Metric</th><th>Feb '26 (Q4 call)</th><th>May '26 (Q1 call)</th></tr></thead>
+          <tbody>
+            <tr><td>Root cause</td><td>Rock/soil, 2 sites</td><td class="neg">Planning gaps, 6 projects</td></tr>
+            <tr><td>Geography</td><td>"Fungible labor anywhere"</td><td class="neg">Halted MW/NE bids</td></tr>
+            <tr><td>'26 Renewables rev</td><td>~$3.0B flattish</td><td class="neg">$2.3B</td></tr>
+            <tr><td>Margin recovery</td><td>Q1'26 is the bottom</td><td class="neg">Delayed to Q4'26</td></tr>
+            <tr><td>'26 EBITDA guide</td><td>$560–580M</td><td class="neg">$480–500M</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:var(--text-3);margin-top:10px">The bear's strongest card: the entire Feb narrative collapsed in 10 weeks. Jefferies admitted it was "unaware of any new construction issues" after talking to mgmt in late Feb. Either bad visibility or bad disclosure — both feed the Hagens Berman probe.</p>
+    </div>
+  </div>
+
+  <!-- WATCH-ITEM SCORECARD -->
+  <div class="card" style="margin-top:24px">
+    <h4><span class="icon-dot warn"></span>The live watch-item scorecard — exactly what tells us we're wrong, and when</h4>
+    <div style="overflow-x:auto;margin-top:8px">
+      <table class="tbl score-tbl">
+        <thead><tr><th>Signal</th><th>Now</th><th>Bull threshold</th><th>Bear confirms</th><th>Resolves</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="dot-status pending"></span>Troubled-project closeout</td>
+            <td class="num">0 of 6</td>
+            <td>3 close Q2, 1 Q3, rest YE</td>
+            <td class="neg">2nd markdown on same projects</td>
+            <td><span class="badge-when">Q2 · Aug</span></td>
+          </tr>
+          <tr>
+            <td><span class="dot-status bad"></span>Energy gross margin</td>
+            <td class="num">7.6%</td>
+            <td>steps toward 9–11% by Q4</td>
+            <td class="neg">bleeds into Q3 still &lt;9%</td>
+            <td><span class="badge-when">Q2–Q3</span></td>
+          </tr>
+          <tr>
+            <td><span class="dot-status bad"></span>Energy book-to-bill</td>
+            <td class="num">0.2x</td>
+            <td>&gt;1.0x in 2H26</td>
+            <td class="neg">stays sub-1.0x</td>
+            <td><span class="badge-when">Q2–Q3</span></td>
+          </tr>
+          <tr>
+            <td><span class="dot-status pending"></span>Gas-gen verbal → backlog</td>
+            <td class="num">$800M</td>
+            <td>converts to firm</td>
+            <td class="neg">doesn't convert</td>
+            <td><span class="badge-when">2H26</span></td>
+          </tr>
+          <tr>
+            <td><span class="dot-status pending"></span>Renewables verbal → backlog</td>
+            <td class="num">$1.1B</td>
+            <td>converts to firm</td>
+            <td class="neg">doesn't convert</td>
+            <td><span class="badge-when">2H26</span></td>
+          </tr>
+          <tr>
+            <td><span class="dot-status pending"></span>$400M pushed revenue</td>
+            <td class="num">→'27</td>
+            <td>holds / firms</td>
+            <td class="neg">cancellations</td>
+            <td><span class="badge-when">Q2–Q4</span></td>
+          </tr>
+          <tr>
+            <td><span class="dot-status pending"></span>Exec / craft attrition</td>
+            <td class="num">elevated</td>
+            <td>stabilizes</td>
+            <td class="neg">more departures (60–100 craft each)</td>
+            <td><span class="badge-when">ongoing</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:12px;color:var(--text-2);margin-top:12px;line-height:1.6">
+      <strong>The single cleanest tell is the top row.</strong> Three of the six projects close in Q2 (early-Aug print). If they close at the <em>revised</em> margin → controls work, H1 lives. If they take <strong>another</strong> charge on the same projects → estimating is still broken (H2), and you exit. That test resolves in ~12 weeks — before you're committed.
+    </p>
+  </div>
+
+  <!-- WHAT BOTH SIDES AGREE ON + VERIFY -->
+  <div class="grid-2" style="margin-top:24px">
+    <div class="card">
+      <h4><span class="icon-dot"></span>What bulls &amp; bears agree on</h4>
+      <ul style="list-style:none;font-size:13px;color:var(--text-2);line-height:1.5">
+        <li style="padding:7px 0;border-bottom:1px solid var(--border)">✓ Utilities (half the business) is thriving — +12% rev, 9.8% margin</li>
+        <li style="padding:7px 0;border-bottom:1px solid var(--border)">✓ The physical drivers (weather, labor, sequencing, redesigns) are real and agreed</li>
+        <li style="padding:7px 0;border-bottom:1px solid var(--border)">✓ Issues concentrated in a 2H24-booked, new-geography vintage</li>
+        <li style="padding:7px 0;border-bottom:1px solid var(--border)">✓ 2026 is a "reset year" — renewables rev down to ~$2.3B</li>
+        <li style="padding:7px 0;border-bottom:1px solid var(--border)">✓ Secular tailwinds (grid, gas-gen, data centers) intact</li>
+        <li style="padding:7px 0">✓ PayneCrest is strategically sound; stock in "penalty box" at ~50% peer discount</li>
+      </ul>
+      <p style="font-size:12px;color:var(--text-3);margin-top:10px">The debate is genuinely narrow: not "is the business broken" but "is the estimating/org repaired." Post-Q1, sentiment is inflecting bullish — <strong>Mizuho upgraded to Outperform (May 11)</strong>; Wolfe, Needham, Thompson Davis, Revelare all constructive. Goldman is the lone SELL.</p>
+    </div>
+    <div class="verify-box">
+      <h4>⚠ Verify before citing to Andrew (AI-generated synthesis)</h4>
+      <ul>
+        <li><strong>"Regional head fired late 2024"</strong> — load-bearing containment fact, sourced to Revelare (buy-side), not the company. Confirm in transcript before stating as fact.</li>
+        <li><strong>"2 of 20 active projects are 2024-vintage"</strong> — also Revelare. The single best containment metric — verify it.</li>
+        <li><strong>Unfamiliar sources</strong> — Greenwich Research &amp; Revelare Partners aren't standard sell-side. Gauge their weight; Wolfe / Evercore / TD Cowen / KeyBanc are reliable.</li>
+        <li><strong>Peer margin figures</strong> — cross-check SOLV/PWR/MTZ prints directly; bases differ (GM vs segment EBITDA margin).</li>
+        <li><strong>1H25 cohort underwriting</strong> — still undisclosed by management. The real residual risk; not yet answerable.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -1945,6 +2203,41 @@ new Chart(document.getElementById('chartScatter'),{
 });
 
 /* ============= CHART: CAPEX ============= */
+/* ============= CHART: PEER MARGIN DIVERGENCE (Solar Contained section) ============= */
+const PEER_MARGIN = {
+  labels:['PRIM\nEnergy GM','MTZ\nClean Energy','PWR\nGross margin','SOLV\nGross margin'],
+  change:[-1.8, 3.98, 1.67, 5.0],            // pp change
+  detail:['9.4% → 7.6% (Q1\'24→Q1\'26)','2.71% → 6.69% EBITDA mgn YoY','12.4% → 14.1% (Q1\'24→Q1\'26)','+500bps YoY → 18.4%'],
+};
+new Chart(document.getElementById('chartPeerMargin'),{
+  type:'bar',
+  data:{
+    labels:PEER_MARGIN.labels,
+    datasets:[{
+      label:'Margin change (percentage points)',
+      data:PEER_MARGIN.change,
+      backgroundColor:PEER_MARGIN.change.map(v=>v<0?'#ef4565':'#3acc8f'),
+      borderRadius:5,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{
+        label:(ctx)=>(ctx.parsed.y>0?'+':'')+ctx.parsed.y.toFixed(1)+' pp',
+        afterLabel:(ctx)=>PEER_MARGIN.detail[ctx.dataIndex],
+      }},
+      annotation:{annotations:{zero:{type:'line',yMin:0,yMax:0,borderColor:'#6f7c99',borderWidth:1}}}
+    },
+    scales:{
+      y:{title:{display:true,text:'Margin change (pp)'},grid:{color:'rgba(38,50,77,.4)'},
+        ticks:{callback:v=>(v>0?'+':'')+v}},
+      x:{grid:{display:false},ticks:{font:{size:10}}},
+    }
+  }
+});
+
 new Chart(document.getElementById('chartCapex'),{
   data:{
     labels:CAPEX.years,
